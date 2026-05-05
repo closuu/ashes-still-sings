@@ -1,0 +1,1801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ashes still sing</title>
+<style>
+@font-face {
+  font-family: 'bitmap';
+  src: url('styles/bitmap.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --black: #000000;
+  --white: #ffffff;
+  --dim: #cccccc;
+  --mid: #888888;
+  --dark: #333333;
+  --border: 2px solid #ffffff;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: #000;
+  color: #fff;
+  font-family: 'bitmap', monospace;
+  font-size: 16px;
+  overflow: hidden;
+  text-transform: lowercase;
+  letter-spacing: 0.03em;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.18) 2px,
+    rgba(0,0,0,0.18) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.screen {
+  display: none;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  position: absolute;
+  top: 0; left: 0;
+}
+.screen.active { display: flex; }
+
+#title-screen {
+  background: #000;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 0;
+}
+
+.title-story {
+  width: 90%;
+  max-width: 520px;
+  font-size: clamp(10px, 2vw, 13px);
+  color: #999;
+  line-height: 1.8;
+  text-align: left;
+  margin-bottom: 32px;
+  border-left: 2px solid #444;
+  padding-left: 16px;
+  animation: fadeIn 3s ease forwards;
+}
+
+.title-main {
+  font-size: clamp(28px, 7vw, 56px);
+  color: #fff;
+  text-align: center;
+  letter-spacing: 0.08em;
+  animation: flicker 4s infinite;
+  margin-bottom: 8px;
+}
+
+.title-sub {
+  font-size: clamp(10px, 2vw, 13px);
+  color: #555;
+  text-align: center;
+  margin-bottom: 48px;
+  letter-spacing: 0.2em;
+}
+
+.btn {
+  background: #000;
+  color: #fff;
+  border: 2px solid #fff;
+  font-family: 'bitmap', monospace;
+  font-size: clamp(11px, 2.5vw, 14px);
+  text-transform: lowercase;
+  padding: 10px 28px;
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  transition: background 0.1s, color 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.btn:hover, .btn:active {
+  background: #fff;
+  color: #000;
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+#class-screen {
+  background: #000;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 10px;
+  overflow-y: auto;
+}
+
+.class-title {
+  font-size: clamp(16px, 4vw, 22px);
+  color: #fff;
+  margin-bottom: 6px;
+  letter-spacing: 0.1em;
+}
+.class-subtitle {
+  font-size: clamp(9px, 1.8vw, 11px);
+  color: #555;
+  margin-bottom: 24px;
+  letter-spacing: 0.15em;
+}
+
+.class-grid {
+  display: flex;
+  flex-direction: row;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 900px;
+}
+
+.class-card {
+  border: 2px solid #fff;
+  background: #000;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  width: clamp(160px, 28vw, 220px);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.class-card:hover, .class-card.selected {
+  background: #111;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.class-card-img {
+  width: 100%;
+  aspect-ratio: 1226 / 1436;
+  object-fit: cover;
+  background: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-bottom: 2px solid #fff;
+}
+
+.class-card-img svg {
+  width: 100%;
+  height: 100%;
+}
+
+.class-card-info {
+  padding: 10px 10px 12px;
+  text-align: center;
+  width: 100%;
+}
+
+.class-name {
+  font-size: clamp(13px, 3vw, 17px);
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.class-desc {
+  font-size: clamp(8px, 1.5vw, 10px);
+  color: #888;
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.class-skill-label {
+  font-size: clamp(7px, 1.3vw, 9px);
+  color: #555;
+  letter-spacing: 0.1em;
+}
+.class-skill-name {
+  font-size: clamp(9px, 1.8vw, 11px);
+  color: #ccc;
+}
+
+.class-select-btn {
+  margin-top: 20px;
+}
+
+#battle-screen {
+  background: #000;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.battle-hud {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px 6px;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.hud-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: clamp(9px, 1.8vw, 11px);
+  color: #fff;
+}
+
+.hud-label {
+  color: #666;
+  min-width: 32px;
+}
+
+.hud-bar-wrap {
+  flex: 1;
+  height: 10px;
+  border: 1px solid #555;
+  background: #111;
+  position: relative;
+}
+
+.hud-bar-fill {
+  height: 100%;
+  background: #fff;
+  transition: width 0.3s;
+}
+
+.hud-bar-fill.sp { background: #aaa; }
+
+.hud-val {
+  min-width: 36px;
+  text-align: right;
+  color: #aaa;
+  font-size: clamp(8px, 1.5vw, 10px);
+}
+
+.battle-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.battle-left {
+  width: clamp(100px, 22vw, 180px);
+  border-right: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px;
+  flex-shrink: 0;
+  transition: background 0.2s;
+  position: relative;
+}
+.battle-left.hit {
+  animation: redFlash 2s forwards;
+}
+
+.battle-card-img {
+  width: 100%;
+  border: 2px solid #fff;
+  background: #050505;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+}
+
+.battle-card-art {
+  width: 100%;
+  aspect-ratio: 1226 / 1436;
+  overflow: hidden;
+  border-bottom: 1px solid #444;
+  background: #050505;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.battle-card-art svg {
+  width: 100%;
+  height: 100%;
+}
+
+.battle-card-label {
+  width: 100%;
+  padding: 4px 6px 5px;
+  text-align: center;
+  font-size: clamp(8px, 1.5vw, 10px);
+  color: #aaa;
+  letter-spacing: 0.08em;
+  background: #000;
+}
+
+.battle-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.battle-enemy-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid #333;
+  padding: 10px;
+  position: relative;
+  min-height: 0;
+}
+
+.enemy-circle-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.enemy-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.enemy-circle.shake {
+  animation: shake 0.4s;
+}
+
+.enemy-name-display {
+  font-size: clamp(10px, 2.2vw, 14px);
+  color: #fff;
+  text-align: center;
+  padding: 0 10px;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.enemy-art {
+  font-size: clamp(6px, 1.1vw, 8px);
+  color: #555;
+  text-align: center;
+  line-height: 1.15;
+  white-space: pre;
+  font-family: 'bitmap', monospace;
+  margin-bottom: 4px;
+  animation: flicker 8s infinite;
+}
+
+.enemy-hp-bar-wrap {
+  width: 80%;
+  max-width: 200px;
+  height: 8px;
+  border: 1px solid #555;
+  background: #111;
+  margin-top: 8px;
+}
+.enemy-hp-bar {
+  height: 100%;
+  background: #fff;
+  transition: width 0.3s;
+}
+
+.enemy-hp-label {
+  font-size: clamp(7px, 1.3vw, 9px);
+  color: #666;
+  margin-top: 3px;
+}
+
+.deg-meter-row {
+  padding: 4px 10px;
+  border-bottom: 1px solid #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.deg-meter-label {
+  font-size: clamp(7px, 1.4vw, 9px);
+  color: #555;
+  letter-spacing: 0.08em;
+}
+.deg-meter-bar {
+  flex: 1;
+  height: 6px;
+  border: 1px solid #444;
+  background: #000;
+}
+.deg-meter-fill {
+  height: 100%;
+  background: #fff;
+  transition: width 0.3s, background 0.6s;
+}
+
+.deg-alert {
+  font-size: clamp(9px, 1.8vw, 12px);
+  color: #ff2020;
+  font-family: 'bitmap', monospace;
+  opacity: 0;
+  pointer-events: none;
+  animation: none;
+  margin-left: 4px;
+  min-width: 18px;
+  font-weight: bold;
+  letter-spacing: 0;
+  text-shadow: none;
+}
+.deg-alert.visible {
+  opacity: 1;
+  animation: blink-red 0.5s step-start infinite;
+}
+@keyframes blink-red {
+  0%, 100% {
+    opacity: 1;
+    color: #ff1111;
+    text-shadow: 0 0 6px #ff0000, 0 0 12px #ff000066;
+  }
+  50% {
+    opacity: 0;
+    text-shadow: none;
+  }
+}
+
+.battle-log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+  font-size: clamp(9px, 1.8vw, 11px);
+  color: #ccc;
+  line-height: 1.7;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #333 #000;
+}
+.battle-log p { margin-bottom: 2px; }
+.battle-log p.sys { color: #666; font-size: 0.85em; }
+.battle-log p.dmg { color: #fff; }
+.battle-log p.bad { color: #aaa; }
+.battle-log p.good { color: #eee; }
+
+.battle-actions {
+  border-top: 2px solid #fff;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.action-btn {
+  background: #000;
+  color: #fff;
+  border: 2px solid #fff;
+  font-family: 'bitmap', monospace;
+  font-size: clamp(10px, 2.2vw, 13px);
+  text-transform: lowercase;
+  padding: 10px 6px;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  transition: background 0.1s, color 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.action-btn:hover, .action-btn:active {
+  background: #fff;
+  color: #000;
+}
+.action-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.battle-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 10px;
+  border-top: 1px solid #333;
+  font-size: clamp(8px, 1.5vw, 10px);
+  color: #555;
+  flex-shrink: 0;
+}
+
+#clear-screen {
+  background: #000;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 30px;
+}
+.clear-title {
+  font-size: clamp(20px, 5vw, 36px);
+  color: #fff;
+  text-align: center;
+  animation: flicker 3s infinite;
+}
+.clear-sub {
+  font-size: clamp(10px, 2vw, 13px);
+  color: #777;
+  text-align: center;
+  line-height: 1.8;
+}
+.clear-stats {
+  font-size: clamp(9px, 1.8vw, 11px);
+  color: #555;
+  text-align: center;
+  line-height: 2;
+}
+
+#gameover-screen {
+  background: #000;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+.go-title {
+  font-size: clamp(28px, 7vw, 52px);
+  color: #fff;
+  animation: flicker 1.5s infinite;
+}
+.go-sub {
+  font-size: clamp(10px, 2vw, 12px);
+  color: #555;
+  text-align: center;
+}
+
+#end-screen {
+  background: #000;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 30px;
+}
+.end-text {
+  max-width: 500px;
+  font-size: clamp(10px, 2vw, 13px);
+  color: #999;
+  text-align: center;
+  line-height: 2;
+  animation: fadeIn 4s ease forwards;
+}
+.end-fade {
+  font-size: clamp(8px, 1.5vw, 10px);
+  color: #333;
+  letter-spacing: 0.2em;
+  animation: slowFade 6s ease forwards;
+}
+
+#map-screen {
+  background: #000;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 10px;
+  overflow-y: auto;
+}
+.map-title {
+  font-size: clamp(14px, 3vw, 20px);
+  color: #fff;
+  margin-bottom: 4px;
+  letter-spacing: 0.1em;
+}
+.map-sub {
+  font-size: clamp(8px, 1.6vw, 10px);
+  color: #444;
+  margin-bottom: 20px;
+  letter-spacing: 0.15em;
+}
+.level-list {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.level-item {
+  border: 1px solid #333;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: clamp(10px, 2vw, 12px);
+  color: #666;
+}
+.level-item.unlocked {
+  border-color: #fff;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.level-item.unlocked:hover, .level-item.unlocked:active {
+  background: #111;
+}
+.level-item.completed {
+  border-color: #555;
+  color: #555;
+}
+.level-item .level-stages {
+  font-size: clamp(8px, 1.4vw, 9px);
+  color: #444;
+}
+.level-item.unlocked .level-stages { color: #666; }
+
+@keyframes flicker {
+  0%, 95%, 100% { opacity: 1; }
+  96% { opacity: 0.6; }
+  97% { opacity: 1; }
+  98% { opacity: 0.4; }
+  99% { opacity: 0.9; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slowFade {
+  0% { opacity: 0; }
+  30% { opacity: 0.6; }
+  100% { opacity: 0; }
+}
+
+@keyframes redFlash {
+  0% { background: rgba(180,0,0,0.35); }
+  100% { background: transparent; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #000; }
+::-webkit-scrollbar-thumb { background: #333; }
+
+@media (max-width: 480px) {
+  .battle-left { width: 80px; }
+  .battle-actions { gap: 6px; padding: 8px; }
+  .action-btn { padding: 8px 4px; }
+  .class-card { width: clamp(120px, 38vw, 180px); }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  
+  <div id="title-screen" class="screen active">
+    <p class="title-story">
+      you wake up and there's no sky.<br>
+      just old stone everywhere, like some broken medieval place that forgot what it used to be.<br>
+      no color, no warmth. not even proper sound.<br>
+      it just that it feels off.<br><br>
+      you take a few steps and then you see her.<br>
+      a girl, standing ahead like she's been there the whole time.<br>
+      she smiles at you menacingly <br>
+      something's not right.<br>
+    </p>
+    <div class="title-main">ashes still sing</div>
+    <div class="title-sub">a Steel, Shadow & Melody Alternative </div>
+    <div class="title-sub">by qobble</div>
+
+    <button class="btn" onclick="showScreen('class-screen')">begin</button>
+  </div>
+
+  
+  <div id="class-screen" class="screen">
+    <div class="class-title">choose your echo</div>
+    <div class="class-subtitle">once chosen, you carry it to the end</div>
+    <div class="class-grid">
+      
+      <div class="class-card" onclick="selectClass('knight')" id="card-knight">
+        <div class="class-card-img">
+          <img src="styles/card_knight.png" alt="knight" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;flex-direction:column;gap:8px;">
+            <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+              <rect x="35" y="5" width="30" height="30" rx="2" fill="none" stroke="#fff" stroke-width="2"/>
+              <rect x="30" y="10" width="40" height="25" rx="1" fill="none" stroke="#888" stroke-width="1"/>
+              <line x1="50" y1="35" x2="50" y2="42" stroke="#fff" stroke-width="2"/>
+              <rect x="28" y="42" width="44" height="45" rx="2" fill="none" stroke="#fff" stroke-width="2"/>
+              <rect x="22" y="44" width="14" height="38" rx="2" fill="none" stroke="#888" stroke-width="1.5"/>
+              <rect x="64" y="44" width="14" height="38" rx="2" fill="none" stroke="#888" stroke-width="1.5"/>
+              <rect x="33" y="87" width="15" height="28" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/>
+              <rect x="52" y="87" width="15" height="28" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/>
+              <line x1="50" y1="55" x2="50" y2="80" stroke="#555" stroke-width="1" stroke-dasharray="3,2"/>
+              <line x1="35" y1="65" x2="65" y2="65" stroke="#555" stroke-width="1"/>
+              <rect x="44" y="48" width="12" height="8" fill="none" stroke="#aaa" stroke-width="1"/>
+              <circle cx="50" cy="17" r="4" fill="none" stroke="#ccc" stroke-width="1.5"/>
+            </svg>
+          </div>
+        </div>
+        <div class="class-card-info">
+          <div class="class-name">knight</div>
+          <div class="class-desc">iron will. heavy armor. strikes with purpose, not haste.</div>
+          <div class="class-skill-label">unique skill &gt;&gt;</div>
+          <div class="class-skill-name">iron bulwark</div>
+        </div>
+      </div>
+      
+      <div class="class-card" onclick="selectClass('trickster')" id="card-trickster">
+        <div class="class-card-img">
+          <img src="styles/card_trickster.png" alt="trickster" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;flex-direction:column;">
+            <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="50" cy="18" rx="14" ry="16" fill="none" stroke="#fff" stroke-width="1.5"/>
+              <path d="M36 28 Q20 40 22 60 Q24 80 38 87 Q50 92 62 87 Q76 80 78 60 Q80 40 64 28" fill="none" stroke="#fff" stroke-width="1.5"/>
+              <line x1="22" y1="55" x2="10" y2="70" stroke="#888" stroke-width="1.5"/>
+              <line x1="78" y1="55" x2="90" y2="70" stroke="#888" stroke-width="1.5"/>
+              <line x1="10" y1="70" x2="8" y2="90" stroke="#888" stroke-width="1.5"/>
+              <line x1="90" y1="70" x2="92" y2="90" stroke="#888" stroke-width="1.5"/>
+              <line x1="38" y1="87" x2="35" y2="115" stroke="#fff" stroke-width="1.5"/>
+              <line x1="62" y1="87" x2="65" y2="115" stroke="#fff" stroke-width="1.5"/>
+              
+              <line x1="75" y1="55" x2="95" y2="35" stroke="#ccc" stroke-width="2"/>
+              <polygon points="95,35 90,38 92,32" fill="#fff"/>
+              <rect x="80" y="52" width="8" height="3" rx="1" fill="#888" transform="rotate(-45 80 52)"/>
+              
+              <line x1="43" y1="16" x2="43" y2="22" stroke="#555" stroke-width="1"/>
+              <line x1="57" y1="16" x2="57" y2="22" stroke="#555" stroke-width="1"/>
+              <path d="M44 23 Q50 27 56 23" fill="none" stroke="#555" stroke-width="1"/>
+            </svg>
+          </div>
+        </div>
+        <div class="class-card-info">
+          <div class="class-name">trickster</div>
+          <div class="class-desc">quick hands. quicker lies. lives on the edge of luck.</div>
+          <div class="class-skill-label">unique skill &gt;&gt;</div>
+          <div class="class-skill-name">last laugh</div>
+        </div>
+      </div>
+      
+      <div class="class-card" onclick="selectClass('bard')" id="card-bard">
+        <div class="class-card-img">
+          <img src="styles/card_bard.png" alt="bard" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;flex-direction:column;">
+            <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+              
+              <ellipse cx="50" cy="18" rx="13" ry="14" fill="none" stroke="#fff" stroke-width="1.5"/>
+              <path d="M37 28 Q22 45 24 75 Q26 95 42 100 Q50 103 58 100 Q74 95 76 75 Q78 45 63 28" fill="none" stroke="#fff" stroke-width="1.5"/>
+              
+              <ellipse cx="72" cy="72" rx="12" ry="14" fill="none" stroke="#ccc" stroke-width="1.5"/>
+              <line x1="72" y1="58" x2="72" y2="38" stroke="#ccc" stroke-width="1.5"/>
+              <line x1="68" y1="38" x2="76" y2="38" stroke="#ccc" stroke-width="1.5"/>
+              <line x1="65" y1="68" x2="79" y2="68" stroke="#888" stroke-width="0.8"/>
+              <line x1="65" y1="73" x2="79" y2="73" stroke="#888" stroke-width="0.8"/>
+              <line x1="65" y1="78" x2="79" y2="78" stroke="#888" stroke-width="0.8"/>
+              
+              <line x1="37" y1="42" x2="24" y2="58" stroke="#888" stroke-width="1.5"/>
+              <line x1="63" y1="42" x2="76" y2="58" stroke="#888" stroke-width="1.5"/>
+              
+              <ellipse cx="50" cy="7" rx="16" ry="5" fill="none" stroke="#fff" stroke-width="1.5"/>
+              <line x1="50" y1="7" x2="56" y2="-5" stroke="#fff" stroke-width="1.5"/>
+              
+              <line x1="42" y1="100" x2="40" y2="115" stroke="#fff" stroke-width="1.5"/>
+              <line x1="58" y1="100" x2="60" y2="115" stroke="#fff" stroke-width="1.5"/>
+              
+              <text x="10" y="30" fill="#555" font-size="8" font-family="serif">♩</text>
+              <text x="16" y="18" fill="#444" font-size="6" font-family="serif">♪</text>
+            </svg>
+          </div>
+        </div>
+        <div class="class-card-info">
+          <div class="class-name">bard</div>
+          <div class="class-desc">words cut deep. songs heal. a mouth is the most dangerous weapon.</div>
+          <div class="class-skill-label">unique skill &gt;&gt;</div>
+          <div class="class-skill-name">dirge</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn class-select-btn" onclick="confirmClass()" id="confirm-class-btn" disabled>begin journey</button>
+  </div>
+
+  
+  <div id="map-screen" class="screen">
+    <div class="map-title">the broken path</div>
+    <div class="map-sub">choose your next step</div>
+    <div class="level-list" id="level-list"></div>
+  </div>
+
+  
+  <div id="battle-screen" class="screen">
+    
+    <div class="battle-hud">
+      <div class="hud-row">
+        <span class="hud-label">lv.</span>
+        <span id="hud-level" style="color:#fff;font-size:clamp(9px,1.8vw,11px)">1</span>
+        <span style="flex:1"></span>
+        <span class="hud-label">sp</span>
+        <div class="hud-bar-wrap" style="max-width:80px;">
+          <div class="hud-bar-fill sp" id="sp-bar" style="width:100%"></div>
+        </div>
+        <span class="hud-val" id="sp-val">3/3</span>
+      </div>
+      <div class="hud-row">
+        <span class="hud-label">hp</span>
+        <div class="hud-bar-wrap">
+          <div class="hud-bar-fill" id="hp-bar" style="width:100%"></div>
+        </div>
+        <span class="hud-val" id="hp-val">100/100</span>
+      </div>
+    </div>
+
+    
+    <div class="battle-main">
+      
+      <div class="battle-left" id="battle-left">
+        <div class="battle-card-img" id="battle-card-img">
+          <div class="battle-card-art" id="battle-card-art">
+            
+          </div>
+          <div class="battle-card-label" id="battle-class-name"></div>
+        </div>
+      </div>
+
+      
+      <div class="battle-right">
+        
+        <div class="battle-enemy-area">
+          <div class="enemy-circle-wrap">
+            <div class="enemy-circle" id="enemy-circle">
+              <span class="enemy-name-display" id="enemy-name-display">---</span>
+            </div>
+          </div>
+          <pre class="enemy-art" id="enemy-art"></pre>
+          <div class="enemy-hp-bar-wrap">
+            <div class="enemy-hp-bar" id="enemy-hp-bar" style="width:100%"></div>
+          </div>
+          <div class="enemy-hp-label" id="enemy-hp-label">??? / ???</div>
+        </div>
+
+        
+        <div class="deg-meter-row">
+          <span class="deg-meter-label">degradation</span>
+          <div class="deg-meter-bar">
+            <div class="deg-meter-fill" id="deg-fill" style="width:0%"></div>
+          </div>
+          <span style="font-size:clamp(7px,1.3vw,9px);color:#555;margin-left:6px;" id="deg-val">0/100</span>
+          <span class="deg-alert" id="deg-alert">(!)</span>
+        </div>
+
+        
+        <div class="battle-log" id="battle-log">
+          <p class="sys">. . .</p>
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="battle-actions">
+      <button class="action-btn" id="btn-attack" onclick="playerAction('attack')">attack</button>
+      <button class="action-btn" id="btn-cleanse" onclick="playerAction('cleanse')">cleanse</button>
+      <button class="action-btn" id="btn-slip" onclick="playerAction('slip')">slip</button>
+      <button class="action-btn" id="btn-break" onclick="playerAction('break')">break</button>
+    </div>
+
+    
+    <div class="battle-footer">
+      <span id="footer-stage">stage 1</span>
+      <span id="footer-skill" style="color:#888;cursor:pointer;" onclick="useClassSkill()">[ skill ]</span>
+      <span id="footer-level">level 1</span>
+    </div>
+  </div>
+
+  
+  <div id="clear-screen" class="screen">
+    <div class="clear-title" id="clear-title">stage cleared</div>
+    <div class="clear-sub" id="clear-sub"></div>
+    <div class="clear-stats" id="clear-stats"></div>
+    <button class="btn" onclick="continueFromClear()">continue</button>
+  </div>
+
+  
+  <div id="gameover-screen" class="screen">
+    <div class="go-title">you fell</div>
+    <div class="go-sub">a black warp swallowed you.</div>
+    <button class="btn" style="margin-top:20px" onclick="retryFromDeath()">return to map</button>
+    <button class="btn" style="margin-top:10px;border-color:#444;color:#555;" onclick="restartGame()">start over</button>
+  </div>
+
+  
+  <div id="end-screen" class="screen">
+    <div class="end-text" id="end-text"></div>
+    <div class="end-fade">. . . t h e  e n d . . .</div>
+    <button class="btn" style="margin-top:30px" onclick="restartGame()">begin again</button>
+  </div>
+
+</div>
+
+<script>
+
+const CLASSES = {
+  knight: {
+    name: 'knight',
+    hp: 210, sp: 3, spMax: 3,
+    atk: 24, def: 0.25,
+    skillName: 'iron bulwark',
+    skillDesc: 'reduces incoming damage by 50% next enemy turn. costs 1 sp.',
+    skillCost: 1,
+    cardSvg: 'knight'
+  },
+  trickster: {
+    name: 'trickster',
+    hp: 150, sp: 4, spMax: 4,
+    atk: 30, def: 0.1,
+    skillName: 'last laugh',
+    skillDesc: 'if degradation > 50, deal double damage this turn. costs 1 sp.',
+    skillCost: 1,
+    cardSvg: 'trickster'
+  },
+  bard: {
+    name: 'bard',
+    hp: 165, sp: 5, spMax: 5,
+    atk: 20, def: 0.15,
+    skillName: 'dirge',
+    skillDesc: 'reduce enemy atk by 30% for 2 turns. costs 2 sp.',
+    skillCost: 2,
+    cardSvg: 'bard'
+  }
+};
+
+const LEVELS = [
+  {
+    name: 'the husk fields',
+    enemies: ['starved husk', 'drip maw', 'thin crawler', 'bone picker'],
+    boss: { name: 'plague rat king', hp: 220, atk: 15, reward: 'the rats bow. something shifts.' }
+  },
+  {
+    name: 'the rusted keep',
+    enemies: ['shroud fragment', 'mimic shell', 'blur walker', 'hidden thread'],
+    boss: { name: 'sir rustblade', hp: 280, atk: 19, reward: 'his blade shatters. you keep walking.' }
+  },
+  {
+    name: 'the crow court',
+    enemies: ['bone guard', 'rib hound', 'spine lash', 'hollow carrier'],
+    boss: { name: 'crowfather elric', hp: 340, atk: 24, reward: 'feathers everywhere. no answers.' }
+  },
+  {
+    name: 'the blade district',
+    enemies: ['blade echo', 'step cutter', 'guard disciple', 'misstep punisher'],
+    boss: { name: 'blant the bladesman', hp: 400, atk: 28, reward: 'he falls without a word.' }
+  },
+  {
+    name: 'the watcher maze',
+    enemies: ['watcher fragment', 'blind seeker', 'pulse warden', 'odd stalker', 'tonberry'],
+    boss: { name: 'ribcage matron', hp: 460, atk: 33, reward: 'she was already dying. you just helped.' }
+  },
+  {
+    name: 'the iron end',
+    enemies: ['laughing split', 'wrong walker', 'joy mask', 'end fragment', 'bahamut'],
+    boss: { name: 'iron maiden', hp: 520, atk: 37, reward: 'end' }
+  }
+];
+
+const ENEMY_STATS = {
+
+  'starved husk':    { hp: 55,  atk: 9  },
+  'drip maw':        { hp: 65,  atk: 10 },
+  'thin crawler':    { hp: 60,  atk: 12 },
+  'bone picker':     { hp: 70,  atk: 11 },
+
+  'shroud fragment': { hp: 90,  atk: 13 },
+  'mimic shell':     { hp: 95,  atk: 15 },
+  'blur walker':     { hp: 85,  atk: 16 },
+  'hidden thread':   { hp: 100, atk: 15 },
+
+  'bone guard':      { hp: 130, atk: 19 },
+  'rib hound':       { hp: 120, atk: 21 },
+  'spine lash':      { hp: 125, atk: 22 },
+  'hollow carrier':  { hp: 140, atk: 20 },
+
+  'blade echo':      { hp: 170, atk: 25 },
+  'step cutter':     { hp: 160, atk: 27 },
+  'guard disciple':  { hp: 175, atk: 24 },
+  'misstep punisher':{ hp: 165, atk: 28 },
+
+  'watcher fragment':{ hp: 210, atk: 30 },
+  'blind seeker':    { hp: 200, atk: 31 },
+  'pulse warden':    { hp: 220, atk: 28 },
+  'odd stalker':   { hp: 215, atk: 33 },
+  'tonberry':        { hp: 240, atk: 34 },
+
+  'laughing split':  { hp: 260, atk: 36 },
+  'wrong walker':    { hp: 250, atk: 37 },
+  'joy mask':        { hp: 270, atk: 34 },
+  'end fragment':    { hp: 280, atk: 39 },
+  'bahamut':         { hp: 320, atk: 41 }
+};
+
+let state = {
+  chosenClass: null,
+  player: null,
+  enemy: null,
+  currentLevel: 0,
+  currentStage: 0,
+  unlockedLevels: 1,
+  degradation: 0,
+  bulwark: false,
+  dirgeturns: 0,
+  skillUsedThisBattle: false,
+  playerTurn: true,
+  inBattle: false
+};
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+let selectedClass = null;
+
+function selectClass(cls) {
+  selectedClass = cls;
+  document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('card-' + cls).classList.add('selected');
+  document.getElementById('confirm-class-btn').disabled = false;
+}
+
+function confirmClass() {
+  if (!selectedClass) return;
+  state.chosenClass = selectedClass;
+  showMap();
+}
+
+function showMap() {
+  showScreen('map-screen');
+  renderMap();
+}
+
+function renderMap() {
+  const list = document.getElementById('level-list');
+  list.innerHTML = '';
+  LEVELS.forEach((lv, i) => {
+    const item = document.createElement('div');
+    const isUnlocked = i < state.unlockedLevels;
+    const isCompleted = i < state.currentLevel || (i === state.currentLevel && state.currentStage > 4);
+
+    if (!isUnlocked) {
+      return;
+    } else if (isCompleted) {
+      item.className = 'level-item completed';
+      item.innerHTML = `<span>level ${i+1} — ${lv.name}</span><span class="level-stages">cleared</span>`;
+    } else {
+      item.className = 'level-item unlocked';
+      const stageLabel = state.currentLevel === i ? `stage ${state.currentStage + 1}/5` : 'stage 1/5';
+      item.innerHTML = `<span>level ${i+1} — ${lv.name}</span><span class="level-stages">${stageLabel}</span>`;
+      item.onclick = () => startLevel(i);
+    }
+    list.appendChild(item);
+  });
+}
+
+function startLevel(lvIdx) {
+  state.currentLevel = lvIdx;
+  startStage();
+}
+
+function startStage() {
+  const lv = LEVELS[state.currentLevel];
+  const classData = CLASSES[state.chosenClass];
+
+  if (!state.player) {
+    state.player = {
+      hp: classData.hp,
+      maxHp: classData.hp,
+      sp: classData.sp,
+      spMax: classData.spMax,
+      atk: classData.atk,
+      def: classData.def
+    };
+  }
+
+  let enemyName, enemyHp, enemyAtk;
+  if (state.currentStage === 4) {
+    enemyName = lv.boss.name;
+    enemyHp = lv.boss.hp;
+    enemyAtk = lv.boss.atk;
+  } else {
+    enemyName = lv.enemies[state.currentStage];
+    const stats = ENEMY_STATS[enemyName] || { hp: 80, atk: 15 };
+    enemyHp = stats.hp;
+    enemyAtk = stats.atk;
+  }
+
+  state.enemy = { name: enemyName, hp: enemyHp, maxHp: enemyHp, atk: enemyAtk };
+  state.degradation = 0;
+  state.bulwark = false;
+  state.dirgeturns = 0;
+  state.skillUsedThisBattle = false;
+  state.playerTurn = true;
+  state.inBattle = true;
+
+  setupBattleUI();
+  showScreen('battle-screen');
+  logMsg(`a ${enemyName} appears.`, 'sys');
+  setActionsEnabled(true);
+}
+
+function setupBattleUI() {
+  const cls = state.chosenClass;
+  const classData = CLASSES[cls];
+
+  document.getElementById('battle-class-name').textContent = cls;
+  const cardArt = document.getElementById('battle-card-art');
+  const img = document.createElement('img');
+  img.src = `styles/card_${cls}.png`;
+  img.alt = cls;
+  img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+  img.onerror = function() {
+    this.style.display = 'none';
+    const svgWrap = document.createElement('div');
+    svgWrap.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;';
+    svgWrap.innerHTML = getCardSVG(cls);
+    cardArt.appendChild(svgWrap);
+  };
+  cardArt.innerHTML = '';
+  cardArt.appendChild(img);
+
+  document.getElementById('footer-stage').textContent = `stage ${state.currentStage + 1}`;
+  document.getElementById('footer-level').textContent = `level ${state.currentLevel + 1}`;
+  document.getElementById('hud-level').textContent = state.currentLevel + 1;
+  document.getElementById('footer-skill').textContent = `[ ${classData.skillName} ]`;
+
+  updateHUD();
+  updateEnemyUI();
+  document.getElementById('battle-log').innerHTML = '';
+}
+
+function getCardSVG(cls) {
+
+  const svgs = {
+    knight: `<svg viewBox="0 0 122 143" xmlns="http://www.w3.org/2000/svg">
+      <rect width="122" height="143" fill="#050505"/>
+      <rect x="35" y="8" width="52" height="52" rx="3" fill="none" stroke="#fff" stroke-width="2"/>
+      <rect x="30" y="13" width="62" height="42" rx="2" fill="none" stroke="#555" stroke-width="1"/>
+      <rect x="44" y="55" width="34" height="5" fill="none" stroke="#888" stroke-width="1"/>
+      <rect x="30" y="60" width="62" height="70" rx="2" fill="none" stroke="#fff" stroke-width="2"/>
+      <rect x="18" y="63" width="20" height="55" rx="2" fill="none" stroke="#888" stroke-width="1.5"/>
+      <rect x="84" y="63" width="20" height="55" rx="2" fill="none" stroke="#888" stroke-width="1.5"/>
+      <rect x="38" y="130" width="20" height="10" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/>
+      <rect x="64" y="130" width="20" height="10" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/>
+      <line x1="61" y1="65" x2="61" y2="125" stroke="#333" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="35" y1="92" x2="87" y2="92" stroke="#333" stroke-width="1"/>
+      <rect x="50" y="68" width="22" height="14" fill="none" stroke="#aaa" stroke-width="1.5"/>
+      <circle cx="61" cy="25" r="8" fill="none" stroke="#ccc" stroke-width="2"/>
+      <line x1="55" y1="25" x2="67" y2="25" stroke="#555" stroke-width="1"/>
+      <line x1="61" y1="19" x2="61" y2="31" stroke="#555" stroke-width="1"/>
+      <text x="61" y="140" text-anchor="middle" fill="#444" font-size="5" font-family="monospace">knight</text>
+    </svg>`,
+    trickster: `<svg viewBox="0 0 122 143" xmlns="http://www.w3.org/2000/svg">
+      <rect width="122" height="143" fill="#050505"/>
+      <ellipse cx="61" cy="22" rx="18" ry="20" fill="none" stroke="#fff" stroke-width="2"/>
+      <path d="M43 36 Q22 55 24 82 Q26 108 44 116 Q61 122 78 116 Q96 108 98 82 Q100 55 79 36" fill="none" stroke="#fff" stroke-width="2"/>
+      <line x1="24" y1="72" x2="8" y2="92" stroke="#888" stroke-width="1.5"/>
+      <line x1="98" y1="72" x2="114" y2="92" stroke="#888" stroke-width="1.5"/>
+      <line x1="44" y1="116" x2="40" y2="138" stroke="#fff" stroke-width="1.5"/>
+      <line x1="78" y1="116" x2="82" y2="138" stroke="#fff" stroke-width="1.5"/>
+      <line x1="95" y1="75" x2="115" y2="55" stroke="#ccc" stroke-width="2.5"/>
+      <polygon points="115,55 109,59 111,52" fill="#fff"/>
+      <rect x="100" y="72" width="10" height="4" rx="1" fill="#888" transform="rotate(-45 100 72)"/>
+      <line x1="54" y1="19" x2="54" y2="27" stroke="#555" stroke-width="1.5"/>
+      <line x1="68" y1="19" x2="68" y2="27" stroke="#555" stroke-width="1.5"/>
+      <path d="M55 28 Q61 33 67 28" fill="none" stroke="#555" stroke-width="1.5"/>
+      <text x="61" y="140" text-anchor="middle" fill="#444" font-size="5" font-family="monospace">trickster</text>
+    </svg>`,
+    bard: `<svg viewBox="0 0 122 143" xmlns="http://www.w3.org/2000/svg">
+      <rect width="122" height="143" fill="#050505"/>
+      <ellipse cx="61" cy="24" rx="16" ry="18" fill="none" stroke="#fff" stroke-width="2"/>
+      <ellipse cx="61" cy="10" rx="22" ry="7" fill="none" stroke="#fff" stroke-width="1.5"/>
+      <line x1="61" y1="10" x2="70" y2="-4" stroke="#fff" stroke-width="1.5"/>
+      <path d="M45 38 Q26 58 28 90 Q30 115 48 122 Q61 128 74 122 Q92 115 94 90 Q96 58 77 38" fill="none" stroke="#fff" stroke-width="2"/>
+      <ellipse cx="90" cy="90" rx="16" ry="18" fill="none" stroke="#ccc" stroke-width="1.5"/>
+      <line x1="90" y1="72" x2="90" y2="50" stroke="#ccc" stroke-width="1.5"/>
+      <line x1="85" y1="50" x2="95" y2="50" stroke="#ccc" stroke-width="1.5"/>
+      <line x1="80" y1="86" x2="100" y2="86" stroke="#888" stroke-width="0.8"/>
+      <line x1="80" y1="92" x2="100" y2="92" stroke="#888" stroke-width="0.8"/>
+      <line x1="80" y1="98" x2="100" y2="98" stroke="#888" stroke-width="0.8"/>
+      <line x1="45" y1="55" x2="28" y2="76" stroke="#888" stroke-width="1.5"/>
+      <line x1="77" y1="55" x2="90" y2="72" stroke="#888" stroke-width="1.5"/>
+      <line x1="48" y1="122" x2="44" y2="140" stroke="#fff" stroke-width="1.5"/>
+      <line x1="74" y1="122" x2="78" y2="140" stroke="#fff" stroke-width="1.5"/>
+      <text x="15" y="40" fill="#444" font-size="10" font-family="serif">♩</text>
+      <text x="22" y="22" fill="#333" font-size="8" font-family="serif">♪</text>
+      <text x="61" y="140" text-anchor="middle" fill="#444" font-size="5" font-family="monospace">bard</text>
+    </svg>`
+  };
+  return svgs[cls] || svgs['knight'];
+}
+
+function updateHUD() {
+  const p = state.player;
+  document.getElementById('hp-bar').style.width = Math.max(0, (p.hp / p.maxHp) * 100) + '%';
+  document.getElementById('hp-val').textContent = `${Math.max(0,Math.floor(p.hp))}/${p.maxHp}`;
+  document.getElementById('sp-bar').style.width = (p.sp / p.spMax) * 100 + '%';
+  document.getElementById('sp-val').textContent = `${p.sp}/${p.spMax}`;
+
+  const deg = state.degradation;
+  document.getElementById('deg-fill').style.width = deg + '%';
+  document.getElementById('deg-val').textContent = `${Math.floor(deg)}/100`;
+
+  const degEl = document.getElementById('deg-fill');
+  const alertEl = document.getElementById('deg-alert');
+  degEl.className = 'deg-meter-fill';
+
+  // Smooth white -> rose -> red -> deep crimson across full 0-100
+  const t = Math.max(0, Math.min(1, deg / 100));
+  let r, g, b;
+  if (t < 0.3) {
+    // white -> light rose
+    const s = t / 0.3;
+    r = 255; g = Math.round(255 - s * 111); b = Math.round(255 - s * 111);
+  } else if (t < 0.55) {
+    // rose -> orange-red
+    const s = (t - 0.3) / 0.25;
+    r = 255; g = Math.round(144 - s * 93); b = Math.round(144 - s * 144);
+  } else if (t < 0.8) {
+    // orange-red -> pure red
+    const s = (t - 0.55) / 0.25;
+    r = 255; g = Math.round(51 - s * 51); b = 0;
+  } else {
+    // pure red -> deep crimson
+    const s = (t - 0.8) / 0.2;
+    r = Math.round(255 - s * 148); g = 0; b = 0;
+  }
+  degEl.style.background = `rgb(${r},${g},${b})`;
+
+  if (deg >= 60) {
+    alertEl.classList.add('visible');
+  } else {
+    alertEl.classList.remove('visible');
+  }
+
+  if (deg >= 80) {
+    const glowIntensity = Math.round(((t - 0.8) / 0.2) * 8);
+    degEl.style.boxShadow = `0 0 ${glowIntensity}px #c00`;
+  } else {
+    degEl.style.boxShadow = 'none';
+  }
+}
+
+const ENEMY_ART = {
+  'starved husk':
+`  ,. .,
+ ( o,o )
+ |)   (|
+--"-"-"--`,
+  'drip maw':
+` _/\\_
+(q  p)
+ \\vv/
+ /||\\ `,
+  'thin crawler':
+`  |  |
+-(+)-
+  |  |
+ / \\ `,
+  'bone picker':
+` ,^,
+(x x)
+/|||\\
+ | | `,
+  'shroud fragment':
+`~~~,~~~
+(  ?  )
+~~~~~~~
+ \\ | / `,
+  'mimic shell':
+` [___]
+ |o o|
+ [___]
+  |||  `,
+  'blur walker':
+` /????\
+( ???? )
+ \????/
+  ~~~~  `,
+  'hidden thread':
+`  ---
+ /   \\
+| . . |
+ \\___/`,
+  'bone guard':
+` /|\\
+[XXX]
+ |||
+/| |\\`,
+  'rib hound':
+` /"\\
+/---\\
+|@@@|
+\\_._/`,
+  'spine lash':
+`  ~|~
+  ~~~
+ /|||\\
+  |||  `,
+  'hollow carrier':
+`[=====]
+| _ _ |
+|_____|
+ || ||  `,
+  'blade echo':
+`  /|
+ / |
+/  |
+---+`,
+  'step cutter':
+` ,---,
+| > < |
+ \\-+-/
+  | |   `,
+  'guard disciple':
+` (###)
+ |###|
+ |###|
+/|###|\\`,
+  'misstep punisher':
+` _/\\_
+( !!! )
+ \\---/
+  |||  `,
+  'watcher fragment':
+`  (O)
+ / | \\
+(  |  )
+ \\_|_/ `,
+  'blind seeker':
+` X   X
+  \\ /
+   ?
+  / \\  `,
+  'pulse warden':
+` {~~~}
+{~!!!~}
+ {~~~}
+  |_|   `,
+  'quiet stalker':
+`  ...
+ (   )
+  ...  `,
+  'tonberry':
+`  ,_.
+ (T_T)
+  |*|
+ / V \\  `,
+  'laughing split':
+` hahaha
+(>    <)
+ \\haha/
+  haha  `,
+  'wrong walker':
+` ?-?-?
+(?   ?)
+ ?-?-?
+  ???   `,
+  'joy mask':
+` :---:
+(:  :)
+ :---:
+  |||   `,
+  'end fragment':
+`  %%%
+ %%%%%
+  %%%
+ %%%%%  `,
+  'bahamut':
+`/=====\\
+|D R A G|
+|  O N  |
+\\=====/  `,
+  'plague rat king':
+`  /\\  /\\
+ (o  \\/  o)
+  \\  /\\  /
+   \\/  \\/  `,
+  'sir rustblade':
+` [RUST]
+ |>--|
+ |>--|
+  |||    `,
+  'crowfather elric':
+`  _/\\_
+ (crow)
+ /|V|\\
+  crow  `,
+  'blant the bladesman':
+`  /|/|
+ /-|-|
+ \\-|-|
+  \\|\\|  `,
+  'ribcage matron':
+`/|\\|/|\\
+| ribs |
+\\|/|\\|/
+  |||    `,
+  'iron maiden':
+`[|||||]
+[| . |]
+[|_._|]
+[|||||]  `
+};
+
+function updateEnemyUI() {
+  const e = state.enemy;
+  document.getElementById('enemy-name-display').textContent = e.name;
+  document.getElementById('enemy-hp-bar').style.width = Math.max(0, (e.hp / e.maxHp) * 100) + '%';
+  document.getElementById('enemy-hp-label').textContent = `${Math.max(0,Math.floor(e.hp))} / ${e.maxHp}`;
+  const art = ENEMY_ART[e.name] || `  ???\n ( ? )\n  ???`;
+  document.getElementById('enemy-art').textContent = art;
+}
+
+function logMsg(msg, type = '') {
+  const log = document.getElementById('battle-log');
+  const p = document.createElement('p');
+  p.className = type;
+  p.textContent = msg;
+  log.appendChild(p);
+  log.scrollTop = log.scrollHeight;
+}
+
+function setActionsEnabled(val) {
+  ['btn-attack','btn-cleanse','btn-slip','btn-break'].forEach(id => {
+    document.getElementById(id).disabled = !val;
+  });
+  document.getElementById('footer-skill').style.opacity = val ? '1' : '0.4';
+}
+
+function playerAction(action) {
+  if (!state.playerTurn || !state.inBattle) return;
+  setActionsEnabled(false);
+
+  const p = state.player;
+  const e = state.enemy;
+  let dmg = 0;
+  let degGain = 0;
+  let dodged = false;
+  let selfhit = false;
+
+  const deg = state.degradation;
+  const chaosRoll = Math.random() * 100;
+  if (deg >= 80 && chaosRoll < 35) {
+
+    logMsg('your grip slips. you lose yourself for a moment.', 'bad');
+    state.degradation = Math.min(100, state.degradation + 3);
+    updateHUD();
+    if (state.degradation >= 100) { triggerGameOver(); return; }
+    setTimeout(() => enemyTurn(), 700);
+    return;
+  }
+
+  switch(action) {
+    case 'attack': {
+      dmg = calcPlayerDmg(p.atk);
+      degGain = 12;
+      e.hp -= dmg;
+      logMsg(`you strike. ${dmg} damage.`, 'dmg');
+      shakeEnemy();
+      break;
+    }
+    case 'slip': {
+      const dodgeChance = 0.45;
+      dodged = Math.random() < dodgeChance;
+      if (dodged) {
+        const clr = Math.floor(10 + Math.random() * 8);
+        state.degradation = Math.max(0, state.degradation - clr);
+        degGain = 0;
+        logMsg(`you slip away. the attack misses. degradation -${clr}.`, 'good');
+      } else {
+        const clr = Math.floor(3 + Math.random() * 4);
+        state.degradation = Math.max(0, state.degradation - clr);
+        degGain = 0;
+        logMsg(`you stumble. the slip fails. degradation -${clr}.`, 'bad');
+      }
+      break;
+    }
+    case 'cleanse': {
+      const clr = Math.floor(26 + Math.random() * 16);
+      state.degradation = Math.max(0, state.degradation - clr);
+      degGain = 0;
+      logMsg(`you breathe through it. degradation -${clr}.`, 'good');
+      break;
+    }
+    case 'break': {
+      dmg = calcPlayerDmg(p.atk * 1.9);
+      degGain = 22;
+      e.hp -= dmg;
+      logMsg(`you crash through. ${dmg} heavy damage.`, 'dmg');
+      shakeEnemy();
+      break;
+    }
+  }
+
+  state.degradation = Math.min(100, state.degradation + degGain);
+  if (state.degradation >= 100) { triggerGameOver(); return; }
+
+  updateHUD();
+  updateEnemyUI();
+
+  if (e.hp <= 0) {
+    setTimeout(() => enemyDefeated(), 400);
+    return;
+  }
+
+  state.playerTurn = false;
+  setTimeout(() => {
+    if (dodged) {
+      logMsg('the enemy lunges — and finds only air.', 'sys');
+      setTimeout(() => endEnemyTurn(), 500);
+    } else {
+      enemyTurn();
+    }
+  }, 500);
+}
+
+function calcPlayerDmg(base) {
+  const deg = state.degradation;
+  let mult = 1.25;
+  if (deg >= 70) mult = 1.75;
+  else if (deg >= 50) mult = 1.5;
+  const raw = base * mult * (0.85 + Math.random() * 0.3);
+  return Math.floor(raw);
+}
+
+function useClassSkill() {
+  if (!state.playerTurn || !state.inBattle) return;
+  const cls = state.chosenClass;
+  const classData = CLASSES[cls];
+  const p = state.player;
+  if (p.sp < classData.skillCost) { logMsg('not enough sp.', 'sys'); return; }
+
+  p.sp -= classData.skillCost;
+  setActionsEnabled(false);
+
+  switch(cls) {
+    case 'knight': {
+      state.bulwark = true;
+      logMsg('iron bulwark raised. next hit reduced.', 'good');
+      updateHUD();
+      setTimeout(() => enemyTurn(), 600);
+      break;
+    }
+    case 'trickster': {
+      const deg = state.degradation;
+      let dmg;
+      if (deg >= 50) {
+        dmg = calcPlayerDmg(state.player.atk * 2.5);
+        logMsg(`last laugh — chaos fuels you. ${dmg} damage.`, 'dmg');
+      } else {
+        dmg = calcPlayerDmg(state.player.atk);
+        logMsg(`last laugh — nothing special yet. ${dmg} damage.`, 'dmg');
+      }
+      state.enemy.hp -= dmg;
+      shakeEnemy();
+      state.degradation = Math.min(100, state.degradation + 14);
+      updateHUD();
+      updateEnemyUI();
+      if (state.enemy.hp <= 0) { setTimeout(() => enemyDefeated(), 400); return; }
+      setTimeout(() => enemyTurn(), 600);
+      break;
+    }
+    case 'bard': {
+      state.dirgeturns = 2;
+      logMsg('dirge sung. enemy weakened for 2 turns.', 'good');
+      updateHUD();
+      setTimeout(() => enemyTurn(), 600);
+      break;
+    }
+  }
+
+  state.playerTurn = false;
+  updateHUD();
+}
+
+function enemyTurn() {
+  const e = state.enemy;
+  const p = state.player;
+
+  let atkMult = 1;
+  if (state.dirgeturns > 0) {
+    atkMult = 0.7;
+    state.dirgeturns--;
+    logMsg(`the dirge lingers. enemy weakened.`, 'good');
+  }
+
+  let dmg = Math.floor(e.atk * atkMult * (0.8 + Math.random() * 0.4));
+
+  if (state.bulwark) {
+    dmg = Math.floor(dmg * 0.5);
+    state.bulwark = false;
+    logMsg(`${e.name} strikes. bulwark holds. ${dmg} damage.`, 'bad');
+  } else {
+    logMsg(`${e.name} strikes you for ${dmg}.`, 'bad');
+  }
+
+  p.hp -= dmg;
+  flashHit();
+  updateHUD();
+
+  if (p.hp <= 0) {
+    setTimeout(() => triggerGameOver(), 500);
+    return;
+  }
+
+  setTimeout(() => endEnemyTurn(), 500);
+}
+
+function endEnemyTurn() {
+  state.playerTurn = true;
+
+  if (Math.random() < 0.5) {
+    const p = state.player;
+    if (p.sp < p.spMax) {
+      p.sp = Math.min(p.spMax, p.sp + 1);
+      logMsg('your focus returns. +1 sp.', 'sys');
+    }
+  }
+  updateHUD();
+  setActionsEnabled(true);
+}
+
+function shakeEnemy() {
+  const el = document.getElementById('enemy-name-display');
+  el.classList.remove('shake');
+  void el.offsetWidth;
+  el.classList.add('shake');
+  setTimeout(() => el.classList.remove('shake'), 400);
+}
+
+function flashHit() {
+  const el = document.getElementById('battle-left');
+  el.classList.remove('hit');
+  void el.offsetWidth;
+  el.classList.add('hit');
+  setTimeout(() => el.classList.remove('hit'), 2000);
+}
+
+function enemyDefeated() {
+  state.inBattle = false;
+  const isBoss = state.currentStage === 4;
+  const lv = LEVELS[state.currentLevel];
+
+  if (isBoss) {
+    if (lv.boss.reward === 'end') {
+      showEndScreen();
+      return;
+    }
+
+    state.currentStage = 0;
+    const wasLevel = state.currentLevel;
+    state.currentLevel++;
+    if (state.currentLevel > state.unlockedLevels - 1) {
+      state.unlockedLevels = state.currentLevel + 1;
+    }
+
+    const p = state.player;
+    p.hp = Math.min(p.maxHp, p.hp + Math.floor(p.maxHp * 0.6));
+    p.sp = p.spMax;
+    p.maxHp = Math.floor(p.maxHp * 1.08);
+    p.atk = Math.floor(p.atk * 1.06);
+
+    document.getElementById('clear-title').textContent = `${lv.name} — cleared`;
+    document.getElementById('clear-sub').textContent = lv.boss.reward;
+    document.getElementById('clear-stats').textContent = `hp restored. strength grows.\nnext: level ${state.currentLevel + 1}`;
+    showScreen('clear-screen');
+  } else {
+
+    state.currentStage++;
+    const nextName = state.currentStage === 4 ? LEVELS[state.currentLevel].boss.name : LEVELS[state.currentLevel].enemies[state.currentStage];
+    document.getElementById('clear-title').textContent = 'stage cleared';
+    document.getElementById('clear-sub').textContent = `the ${state.enemy.name} falls silent.`;
+    document.getElementById('clear-stats').textContent = `next: ${nextName}`;
+
+    const p = state.player;
+    p.hp = Math.min(p.maxHp, p.hp + 12);
+    showScreen('clear-screen');
+  }
+}
+
+function continueFromClear() {
+  if (state.currentLevel >= LEVELS.length) {
+    showEndScreen();
+    return;
+  }
+  startStage();
+}
+
+function triggerGameOver() {
+  state.inBattle = false;
+
+  if (state.player) {
+    state.player.hp = state.player.maxHp;
+    state.player.sp = state.player.spMax;
+  }
+  showScreen('gameover-screen');
+}
+
+function retryFromDeath() {
+
+  showMap();
+}
+
+function restartGame() {
+  state = {
+    chosenClass: null,
+    player: null,
+    enemy: null,
+    currentLevel: 0,
+    currentStage: 0,
+    unlockedLevels: 1,
+    degradation: 0,
+    bulwark: false,
+    dirgeturns: 0,
+    skillUsedThisBattle: false,
+    playerTurn: true,
+    inBattle: false
+  };
+  selectedClass = null;
+  document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('confirm-class-btn').disabled = true;
+  showScreen('title-screen');
+}
+
+function showEndScreen() {
+  state.inBattle = false;
+  document.getElementById('end-text').innerHTML =
+    `you defeat the iron maiden.<br><br>` +
+    `you ask who she is.<br><br>` +
+    `she just smiles at you again, like she already knows.<br><br>` +
+    `then you start fading away slowly,<br>like you're being erased.<br><br>` +
+    `she stays still. watching you disappear.<br><br>` +
+    `that same smile never leaves her face.<br>` +
+    `even when you're almost gone.`;
+  showScreen('end-screen');
+}
+
+</script>
+</body>
+</html>
