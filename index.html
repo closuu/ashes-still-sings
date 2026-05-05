@@ -721,9 +721,7 @@ body::after {
       something's not right.<br>
     </p>
     <div class="title-main">ashes still sing</div>
-    <div class="title-sub">a Steel, Shadow & Melody Alternative </div>
-    <div class="title-sub">by qobble</div>
-
+    <div class="title-sub">. . . prologue . . .</div>
     <button class="btn" onclick="showScreen('class-screen')">begin</button>
   </div>
 
@@ -952,6 +950,45 @@ body::after {
 
 <script>
 
+// ─── SFX ─────────────────────────────────────────────────────────────────────
+const _sfxCtx = (() => {
+  try { return new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return null; }
+})();
+
+function _beep({ freq = 220, type = 'square', vol = 0.18, dur = 0.08, freqEnd, attack = 0.005 } = {}) {
+  if (!_sfxCtx) return;
+  const osc = _sfxCtx.createOscillator();
+  const gain = _sfxCtx.createGain();
+  osc.connect(gain); gain.connect(_sfxCtx.destination);
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, _sfxCtx.currentTime);
+  if (freqEnd) osc.frequency.exponentialRampToValueAtTime(freqEnd, _sfxCtx.currentTime + dur);
+  gain.gain.setValueAtTime(0.0001, _sfxCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(vol, _sfxCtx.currentTime + attack);
+  gain.gain.exponentialRampToValueAtTime(0.0001, _sfxCtx.currentTime + dur);
+  osc.start(_sfxCtx.currentTime);
+  osc.stop(_sfxCtx.currentTime + dur + 0.01);
+}
+
+const SFX = {
+  click:   () => _beep({ freq: 300, type: 'square',   vol: 0.12, dur: 0.06 }),
+  confirm: () => { _beep({ freq: 280, type: 'square', vol: 0.15, dur: 0.07 });
+                   setTimeout(() => _beep({ freq: 420, type: 'square', vol: 0.12, dur: 0.09 }), 70); },
+  attack:  () => _beep({ freq: 160, type: 'sawtooth', vol: 0.22, dur: 0.12, freqEnd: 80 }),
+  heavy:   () => _beep({ freq: 100, type: 'sawtooth', vol: 0.28, dur: 0.18, freqEnd: 50 }),
+  slip:    () => _beep({ freq: 520, type: 'sine',     vol: 0.14, dur: 0.10, freqEnd: 260 }),
+  cleanse: () => _beep({ freq: 360, type: 'sine',     vol: 0.12, dur: 0.14, freqEnd: 480 }),
+  skill:   () => { _beep({ freq: 200, type: 'square', vol: 0.18, dur: 0.08 });
+                   setTimeout(() => _beep({ freq: 340, type: 'square', vol: 0.15, dur: 0.10 }), 80);
+                   setTimeout(() => _beep({ freq: 500, type: 'sine',   vol: 0.10, dur: 0.14 }), 160); },
+  hit:     () => _beep({ freq: 120, type: 'sawtooth', vol: 0.25, dur: 0.15, freqEnd: 60 }),
+  victory: () => { [300,380,480,600].forEach((f,i) =>
+                   setTimeout(() => _beep({ freq: f, type: 'square', vol: 0.14, dur: 0.12 }), i * 90)); },
+  death:   () => { [200,160,120,80].forEach((f,i) =>
+                   setTimeout(() => _beep({ freq: f, type: 'sawtooth', vol: 0.20, dur: 0.18 }), i * 110)); },
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 const CLASSES = {
   knight: {
     name: 'knight',
@@ -1073,6 +1110,7 @@ function showScreen(id) {
 let selectedClass = null;
 
 function selectClass(cls) {
+  SFX.click();
   selectedClass = cls;
   document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
   document.getElementById('card-' + cls).classList.add('selected');
@@ -1081,6 +1119,7 @@ function selectClass(cls) {
 
 function confirmClass() {
   if (!selectedClass) return;
+  SFX.confirm();
   state.chosenClass = selectedClass;
   showMap();
 }
@@ -1513,6 +1552,7 @@ function playerAction(action) {
 
   switch(action) {
     case 'attack': {
+      SFX.attack();
       dmg = calcPlayerDmg(p.atk);
       degGain = 12;
       e.hp -= dmg;
@@ -1521,6 +1561,7 @@ function playerAction(action) {
       break;
     }
     case 'slip': {
+      SFX.slip();
       const dodgeChance = 0.45;
       dodged = Math.random() < dodgeChance;
       if (dodged) {
@@ -1537,6 +1578,7 @@ function playerAction(action) {
       break;
     }
     case 'cleanse': {
+      SFX.cleanse();
       const clr = Math.floor(26 + Math.random() * 16);
       state.degradation = Math.max(0, state.degradation - clr);
       degGain = 0;
@@ -1544,6 +1586,7 @@ function playerAction(action) {
       break;
     }
     case 'break': {
+      SFX.heavy();
       dmg = calcPlayerDmg(p.atk * 1.9);
       degGain = 22;
       e.hp -= dmg;
@@ -1586,6 +1629,7 @@ function calcPlayerDmg(base) {
 
 function useClassSkill() {
   if (!state.playerTurn || !state.inBattle) return;
+  SFX.skill();
   const cls = state.chosenClass;
   const classData = CLASSES[cls];
   const p = state.player;
@@ -1690,6 +1734,7 @@ function shakeEnemy() {
 }
 
 function flashHit() {
+  SFX.hit();
   const el = document.getElementById('battle-left');
   el.classList.remove('hit');
   void el.offsetWidth;
@@ -1699,6 +1744,7 @@ function flashHit() {
 
 function enemyDefeated() {
   state.inBattle = false;
+  SFX.victory();
   const isBoss = state.currentStage === 4;
   const lv = LEVELS[state.currentLevel];
 
@@ -1740,6 +1786,7 @@ function enemyDefeated() {
 }
 
 function continueFromClear() {
+  SFX.click();
   if (state.currentLevel >= LEVELS.length) {
     showEndScreen();
     return;
@@ -1749,6 +1796,7 @@ function continueFromClear() {
 
 function triggerGameOver() {
   state.inBattle = false;
+  SFX.death();
 
   if (state.player) {
     state.player.hp = state.player.maxHp;
@@ -1758,6 +1806,7 @@ function triggerGameOver() {
 }
 
 function retryFromDeath() {
+  SFX.click();
 
   showMap();
 }
