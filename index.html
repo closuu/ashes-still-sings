@@ -82,34 +82,120 @@ body::after {
   gap: 0;
 }
 
-.title-story {
-  width: 90%;
-  max-width: 520px;
-  font-size: clamp(10px, 2vw, 13px);
-  color: #999;
-  line-height: 1.8;
-  text-align: left;
-  margin-bottom: 32px;
-  border-left: 2px solid #444;
-  padding-left: 16px;
-  animation: fadeIn 3s ease forwards;
+/* ── Medieval title block ── */
+.title-frame {
+  border: 1px solid #fff;
+  padding: 32px 48px 28px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  max-width: 90vw;
 }
+/* corner ornaments */
+.title-frame::before, .title-frame::after {
+  content: '✦';
+  position: absolute;
+  font-size: 10px;
+  color: #fff;
+}
+.title-frame::before { top: -7px; left: -7px; }
+.title-frame::after  { bottom: -7px; right: -7px; }
+.title-corner-bl, .title-corner-tr {
+  position: absolute;
+  font-size: 10px;
+  color: #fff;
+  pointer-events: none;
+}
+.title-corner-bl { bottom: -7px; left: -7px; }
+.title-corner-tr { top: -7px; right: -7px; }
+
+/* top rule */
+.title-rule {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.title-rule-line { flex: 1; height: 1px; background: #fff; }
+.title-rule-glyph { font-size: 11px; color: #fff; letter-spacing: 0; }
 
 .title-main {
-  font-size: clamp(28px, 7vw, 56px);
+  font-size: clamp(30px, 8vw, 64px);
   color: #fff;
   text-align: center;
-  letter-spacing: 0.08em;
-  animation: flicker 4s infinite;
-  margin-bottom: 8px;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  margin-bottom: 6px;
+  font-family: 'bitmap', monospace;
+  text-transform: lowercase;
 }
 
 .title-sub {
-  font-size: clamp(10px, 2vw, 13px);
+  font-size: clamp(8px, 1.6vw, 10px);
   color: #555;
   text-align: center;
-  margin-bottom: 48px;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.35em;
+  margin-bottom: 22px;
+  text-transform: lowercase;
+}
+
+/* bottom rule */
+.title-rule-bottom {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  margin-bottom: 24px;
+}
+
+.title-byline {
+  font-size: clamp(8px, 1.5vw, 10px);
+  color: #444;
+  letter-spacing: 0.14em;
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* ── Story interstitial screen ── */
+#story-screen {
+  background: #000;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+.story-text-block {
+  width: 90%;
+  max-width: 480px;
+  font-size: clamp(10px, 2vw, 13px);
+  color: #888;
+  line-height: 2;
+  text-align: left;
+  border-left: 1px solid #333;
+  padding-left: 20px;
+  margin-bottom: 40px;
+  min-height: 120px;
+}
+.story-text-block span.cursor {
+  display: inline-block;
+  width: 7px;
+  height: 1em;
+  background: #555;
+  margin-left: 2px;
+  vertical-align: middle;
+  animation: blink-red 0.7s step-start infinite;
+}
+.story-continue-btn {
+  opacity: 0;
+  transition: opacity 0.6s;
+  pointer-events: none;
+}
+.story-continue-btn.visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .btn {
@@ -1013,26 +1099,48 @@ body::after {
   letter-spacing: 0.08em;
 }
 
+
+/* ═══════════════════════════════════════════════
+   STARTUP / SPLASH SCREEN
+═══════════════════════════════════════════════ */
+
 </style>
 </head>
 <body>
 <div id="app">
 
   
+
+  <!-- ══════════════════════════════════
+       STARTUP / SPLASH SCREEN
+  ══════════════════════════════════ -->
   <div id="title-screen" class="screen active">
-   <p class="title-story">
-      you wake up and there’s no sky.<br>
-      just cold, crumbling walls everywhere, stretching into the dark.<br>
-      no color, no warmth.<br>
-      it doesn't make sense.<br><br>
-      you take a few steps and see..<br>
-      A girl, standing there like she’s been waiting the whole time.<br>
-      she gives you a cold, menacing smile.<br>
-      something is definitely wrong.<br>
-</p>
-    <div class="title-main">ashes still sing</div>
-    <div class="title-sub">a steel, shadow & melody alternative</div>
-    <button class="btn" onclick="showScreen('class-screen')">begin</button>
+    <div class="title-frame">
+      <span class="title-corner-bl">✦</span>
+      <span class="title-corner-tr">✦</span>
+      <div class="title-rule">
+        <div class="title-rule-line"></div>
+        <span class="title-rule-glyph">⚔</span>
+        <div class="title-rule-line"></div>
+      </div>
+      <div class="title-main">ashes still sing</div>
+      <div class="title-sub">— a Steel, Shadow & Melody Alternative —</div>
+      <div class="title-rule-bottom">
+        <div class="title-rule-line"></div>
+        <span class="title-rule-glyph">☩</span>
+        <div class="title-rule-line"></div>
+      </div>
+      <button class="btn" onclick="SFX.confirm(); showScreen('class-screen')" style="letter-spacing:0.18em;">begin</button>
+    </div>
+    <div class="title-byline">by CaziWorks &nbsp;—&nbsp; qobble</div>
+  </div>
+
+  <!-- Story interstitial: shown after class pick, before map -->
+  <div id="story-screen" class="screen">
+    <div class="story-text-block" id="story-text-block"></div>
+    <button class="btn story-continue-btn" id="story-continue-btn"
+      onclick="SFX.confirm(); showMap()"
+      style="letter-spacing:0.18em;">continue</button>
   </div>
 
   
@@ -1144,7 +1252,7 @@ body::after {
 
   
   <div id="map-screen" class="screen">
-    <div class="map-title">Fh Map</div>
+    <div class="map-title">the broken path</div>
     <div class="map-sub">choose your next step</div>
     <div class="level-list" id="level-list"></div>
   </div>
@@ -1421,7 +1529,7 @@ const CLASSES = {
     hp: 210, sp: 3, spMax: 3,
     atk: 24, def: 0.25,
     skillName: 'iron bulwark',
-    skillDesc: 'reduces incoming damage by 50% next enemy turn. costs 1 sp.',
+    skillDesc: 'raise iron bulwark: block 75% damage for 3 enemy turns. costs 1 sp.',
     skillCost: 1,
     cardSvg: 'knight'
   },
@@ -1430,7 +1538,7 @@ const CLASSES = {
     hp: 150, sp: 4, spMax: 4,
     atk: 30, def: 0.1,
     skillName: 'last laugh',
-    skillDesc: 'if degradation > 50, deal double damage this turn. costs 1 sp.',
+    skillDesc: 'last laugh: deal 1.5x damage. at deg>50, deal 3x and add deg. costs 1 sp.',
     skillCost: 1,
     cardSvg: 'trickster'
   },
@@ -1439,7 +1547,7 @@ const CLASSES = {
     hp: 165, sp: 5, spMax: 5,
     atk: 20, def: 0.15,
     skillName: 'dirge',
-    skillDesc: 'reduce enemy atk by 30% for 2 turns. costs 2 sp.',
+    skillDesc: 'dirge: reduce enemy atk by 50% for 3 turns. costs 2 sp.',
     skillCost: 2,
     cardSvg: 'bard'
   }
@@ -1521,7 +1629,7 @@ let state = {
   currentStage: 0,
   unlockedLevels: 1,
   degradation: 0,
-  bulwark: false,
+  bulwark: 0,
   dirgeturns: 0,
   skillUsedThisBattle: false,
   playerTurn: true,
@@ -1547,7 +1655,53 @@ function confirmClass() {
   if (!selectedClass) return;
   SFX.confirm();
   state.chosenClass = selectedClass;
-  showMap();
+  showStory();
+}
+
+const STORY_LINES = [
+  "you wake up and there's no sky.",
+  "just cold, crumbling walls everywhere, stretching into the dark.",
+  "that forgot what it used to be.",
+  "no color, no warmth. not even proper sound.",
+  "it just feels... off.",
+  "",
+  "you take a few steps and then you see..",
+  "a girl, standing ahead like she's been there the whole time.",
+  "she smiles at you — menacingly.",
+  "something's not right.",
+];
+
+function showStory() {
+  showScreen('story-screen');
+  const block = document.getElementById('story-text-block');
+  const btn = document.getElementById('story-continue-btn');
+  block.innerHTML = '';
+  btn.classList.remove('visible');
+
+  let lineIdx = 0, charIdx = 0;
+  let fullText = '';
+  const cursor = '<span class="cursor"></span>';
+
+  function typeNext() {
+    if (lineIdx >= STORY_LINES.length) {
+      block.innerHTML = fullText.replace(/\n/g, '<br>');
+      btn.classList.add('visible');
+      return;
+    }
+    const line = STORY_LINES[lineIdx];
+    if (charIdx < line.length) {
+      fullText += line[charIdx];
+      charIdx++;
+      block.innerHTML = fullText.replace(/\n/g, '<br>') + cursor;
+      setTimeout(typeNext, 38 + Math.random() * 22);
+    } else {
+      fullText += line.length === 0 ? '<br>' : '<br>';
+      charIdx = 0;
+      lineIdx++;
+      setTimeout(typeNext, line.length === 0 ? 80 : 160);
+    }
+  }
+  typeNext();
 }
 
 function showMap() {
@@ -1621,7 +1775,7 @@ function startStage() {
 
   state.enemy = { name: enemyName, hp: enemyHp, maxHp: enemyHp, atk: enemyAtk };
   state.degradation = 0;
-  state.bulwark = false;
+  state.bulwark = 0;
   state.dirgeturns = 0;
   state.skillUsedThisBattle = false;
   state.playerTurn = true;
@@ -2075,8 +2229,8 @@ function useClassSkill() {
 
   switch(cls) {
     case 'knight': {
-      state.bulwark = true;
-      logMsg('iron bulwark raised. next hit reduced.', 'good');
+      state.bulwark = 3;
+      logMsg('iron bulwark raised. 75% damage blocked for 3 turns.', 'good');
       updateHUD();
       setTimeout(() => enemyTurn(), 600);
       break;
@@ -2084,16 +2238,21 @@ function useClassSkill() {
     case 'trickster': {
       const deg = state.degradation;
       let dmg;
-      if (deg >= 50) {
+      if (deg >= 70) {
+        dmg = calcPlayerDmg(state.player.atk * 3.5);
+        logMsg(`last laugh — you burn everything. ${dmg} damage.`, 'dmg');
+        state.degradation = Math.min(100, state.degradation + 18);
+      } else if (deg >= 50) {
         dmg = calcPlayerDmg(state.player.atk * 2.5);
         logMsg(`last laugh — chaos fuels you. ${dmg} damage.`, 'dmg');
+        state.degradation = Math.min(100, state.degradation + 14);
       } else {
-        dmg = calcPlayerDmg(state.player.atk);
-        logMsg(`last laugh — nothing special yet. ${dmg} damage.`, 'dmg');
+        dmg = calcPlayerDmg(state.player.atk * 1.5);
+        logMsg(`last laugh — a vicious strike. ${dmg} damage.`, 'dmg');
+        state.degradation = Math.min(100, state.degradation + 8);
       }
       state.enemy.hp -= dmg;
       shakeEnemy();
-      state.degradation = Math.min(100, state.degradation + 14);
       updateHUD();
       updateEnemyUI();
       if (state.enemy.hp <= 0) { setTimeout(() => enemyDefeated(), 400); return; }
@@ -2101,8 +2260,8 @@ function useClassSkill() {
       break;
     }
     case 'bard': {
-      state.dirgeturns = 2;
-      logMsg('dirge sung. enemy weakened for 2 turns.', 'good');
+      state.dirgeturns = 3;
+      logMsg('dirge sung. enemy weakened for 3 turns.', 'good');
       updateHUD();
       setTimeout(() => enemyTurn(), 600);
       break;
@@ -2119,17 +2278,18 @@ function enemyTurn() {
 
   let atkMult = 1;
   if (state.dirgeturns > 0) {
-    atkMult = 0.7;
+    atkMult = 0.5;
     state.dirgeturns--;
-    logMsg(`the dirge lingers. enemy weakened.`, 'good');
+    logMsg(`the dirge lingers. enemy at half strength.`, 'good');
   }
 
   let dmg = Math.floor(e.atk * atkMult * (0.8 + Math.random() * 0.4));
 
-  if (state.bulwark) {
-    dmg = Math.floor(dmg * 0.5);
-    state.bulwark = false;
-    logMsg(`${e.name} strikes. bulwark holds. ${dmg} damage.`, 'bad');
+  if (state.bulwark > 0) {
+    dmg = Math.floor(dmg * 0.25);
+    state.bulwark--;
+    const remaining = state.bulwark;
+    logMsg(`${e.name} strikes. bulwark holds (${remaining} left). ${dmg} damage.`, 'bad');
   } else {
     logMsg(`${e.name} strikes you for ${dmg}.`, 'bad');
   }
@@ -2277,7 +2437,7 @@ function restartGame() {
     currentStage: 0,
     unlockedLevels: 1,
     degradation: 0,
-    bulwark: false,
+    bulwark: 0,
     dirgeturns: 0,
     skillUsedThisBattle: false,
     playerTurn: true,
@@ -2361,7 +2521,7 @@ Object.assign(SFX, {
 // ── Dungeon Map Generator ───────────────────────────────────────
 // Boss definitions per floor
 const DUNGEON_BOSSES = {
-  2: { name: 'old gatekeeper',    hp: 320, atk: 38 },
+  2: { name: 'old gatekeeper',    hp: 260, atk: 22 },
   3: { name: 'lord of empty halls', hp: 480, atk: 52 },
   4: { name: 's.fade',            hp: 640, atk: 68 },
 };
@@ -3268,7 +3428,7 @@ function startDungeonEncounterBattle(enemyName) {
   state.player = dungeon.player;
   state.inBattle = true;
   state.playerTurn = true;
-  state.bulwark = false;
+  state.bulwark = 0;
   state.dirgeturns = 0;
   state.skillUsedThisBattle = false;
   state._fromDungeon = true;
@@ -3341,6 +3501,15 @@ function dungeonDeath() {
 
   showScreen('gameover-screen');
 }
+
+
+// ── Startup screen ────────────────────────────────────────────────
+
+// Auto-dismiss after 5.5s if user doesn't tap
+setTimeout(() => {
+  const screen = document.getElementById('startup-screen');
+  if (screen && screen.classList.contains('active')) dismissStartup();
+}, 5500);
 
 </script>
 </body>
