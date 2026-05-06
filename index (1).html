@@ -1,0 +1,3345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ashes still sing</title>
+<style>
+@font-face {
+  font-family: 'bitmap';
+  src: url('styles/bitmap.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --black: #000000;
+  --white: #ffffff;
+  --dim: #cccccc;
+  --mid: #888888;
+  --dark: #333333;
+  --border: 2px solid #ffffff;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: #000;
+  color: #fff;
+  font-family: 'bitmap', monospace;
+  font-size: 16px;
+  overflow: hidden;
+  text-transform: lowercase;
+  letter-spacing: 0.03em;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.18) 2px,
+    rgba(0,0,0,0.18) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.screen {
+  display: none;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  position: absolute;
+  top: 0; left: 0;
+}
+.screen.active { display: flex; }
+
+#title-screen {
+  background: #000;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 0;
+}
+
+.title-story {
+  width: 90%;
+  max-width: 520px;
+  font-size: clamp(10px, 2vw, 13px);
+  color: #999;
+  line-height: 1.8;
+  text-align: left;
+  margin-bottom: 32px;
+  border-left: 2px solid #444;
+  padding-left: 16px;
+  animation: fadeIn 3s ease forwards;
+}
+
+.title-main {
+  font-size: clamp(28px, 7vw, 56px);
+  color: #fff;
+  text-align: center;
+  letter-spacing: 0.08em;
+  animation: flicker 4s infinite;
+  margin-bottom: 8px;
+}
+
+.title-sub {
+  font-size: clamp(10px, 2vw, 13px);
+  color: #555;
+  text-align: center;
+  margin-bottom: 48px;
+  letter-spacing: 0.2em;
+}
+
+.btn {
+  background: #000;
+  color: #fff;
+  border: 2px solid #fff;
+  font-family: 'bitmap', monospace;
+  font-size: clamp(11px, 2.5vw, 14px);
+  text-transform: lowercase;
+  padding: 10px 28px;
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  transition: background 0.1s, color 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.btn:hover, .btn:active {
+  background: #fff;
+  color: #000;
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+#class-screen {
+  background: #000;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 10px;
+  overflow-y: auto;
+}
+
+.class-title {
+  font-size: clamp(16px, 4vw, 22px);
+  color: #fff;
+  margin-bottom: 6px;
+  letter-spacing: 0.1em;
+}
+.class-subtitle {
+  font-size: clamp(9px, 1.8vw, 11px);
+  color: #555;
+  margin-bottom: 24px;
+  letter-spacing: 0.15em;
+}
+
+.class-grid {
+  display: flex;
+  flex-direction: row;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 900px;
+}
+
+.class-card {
+  border: 2px solid #fff;
+  background: #000;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  width: clamp(160px, 28vw, 220px);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.class-card:hover, .class-card.selected {
+  background: #111;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.class-card-img {
+  width: 100%;
+  aspect-ratio: 1226 / 1436;
+  object-fit: cover;
+  background: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-bottom: 2px solid #fff;
+}
+
+.class-card-img svg {
+  width: 100%;
+  height: 100%;
+}
+
+.class-card-info {
+  padding: 10px 10px 12px;
+  text-align: center;
+  width: 100%;
+}
+
+.class-name {
+  font-size: clamp(13px, 3vw, 17px);
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.class-desc {
+  font-size: clamp(8px, 1.5vw, 10px);
+  color: #888;
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.class-skill-label {
+  font-size: clamp(7px, 1.3vw, 9px);
+  color: #555;
+  letter-spacing: 0.1em;
+}
+.class-skill-name {
+  font-size: clamp(9px, 1.8vw, 11px);
+  color: #ccc;
+}
+
+.class-select-btn {
+  margin-top: 20px;
+}
+
+#battle-screen {
+  background: #000;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.battle-hud {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px 6px;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.hud-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: clamp(9px, 1.8vw, 11px);
+  color: #fff;
+}
+
+.hud-label {
+  color: #666;
+  min-width: 32px;
+}
+
+.hud-bar-wrap {
+  flex: 1;
+  height: 10px;
+  border: 1px solid #555;
+  background: #111;
+  position: relative;
+}
+
+.hud-bar-fill {
+  height: 100%;
+  background: #fff;
+  transition: width 0.3s;
+}
+
+.hud-bar-fill.sp { background: #aaa; }
+
+.hud-val {
+  min-width: 36px;
+  text-align: right;
+  color: #aaa;
+  font-size: clamp(8px, 1.5vw, 10px);
+}
+
+.battle-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.battle-left {
+  width: clamp(100px, 22vw, 180px);
+  border-right: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px;
+  flex-shrink: 0;
+  transition: background 0.2s;
+  position: relative;
+}
+.battle-left.hit {
+  animation: redFlash 2s forwards;
+}
+
+.battle-card-img {
+  width: 100%;
+  border: 2px solid #fff;
+  background: #050505;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+}
+
+.battle-card-art {
+  width: 100%;
+  aspect-ratio: 1226 / 1436;
+  overflow: hidden;
+  border-bottom: 1px solid #444;
+  background: #050505;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.battle-card-art svg {
+  width: 100%;
+  height: 100%;
+}
+
+.battle-card-label {
+  width: 100%;
+  padding: 4px 6px 5px;
+  text-align: center;
+  font-size: clamp(8px, 1.5vw, 10px);
+  color: #aaa;
+  letter-spacing: 0.08em;
+  background: #000;
+}
+
+.battle-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.battle-enemy-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid #333;
+  padding: 10px;
+  position: relative;
+  min-height: 0;
+}
+
+.enemy-circle-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.enemy-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.enemy-circle.shake {
+  animation: shake 0.4s;
+}
+
+.enemy-name-display {
+  font-size: clamp(10px, 2.2vw, 14px);
+  color: #fff;
+  text-align: center;
+  padding: 0 10px;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.enemy-art {
+  font-size: clamp(6px, 1.1vw, 8px);
+  color: #555;
+  text-align: center;
+  line-height: 1.15;
+  white-space: pre;
+  font-family: 'bitmap', monospace;
+  margin-bottom: 4px;
+  animation: flicker 8s infinite;
+}
+
+.enemy-hp-bar-wrap {
+  width: 80%;
+  max-width: 200px;
+  height: 8px;
+  border: 1px solid #555;
+  background: #111;
+  margin-top: 8px;
+}
+.enemy-hp-bar {
+  height: 100%;
+  background: #fff;
+  transition: width 0.3s;
+}
+
+.enemy-hp-label {
+  font-size: clamp(7px, 1.3vw, 9px);
+  color: #666;
+  margin-top: 3px;
+}
+
+.deg-meter-row {
+  padding: 4px 10px;
+  border-bottom: 1px solid #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.deg-meter-label {
+  font-size: clamp(7px, 1.4vw, 9px);
+  color: #555;
+  letter-spacing: 0.08em;
+}
+.deg-meter-bar {
+  flex: 1;
+  height: 6px;
+  border: 1px solid #444;
+  background: #000;
+}
+.deg-meter-fill {
+  height: 100%;
+  background: #fff;
+  transition: width 0.3s, background 0.6s;
+}
+
+.deg-alert {
+  font-size: clamp(9px, 1.8vw, 12px);
+  color: #ff2020;
+  font-family: 'bitmap', monospace;
+  opacity: 0;
+  pointer-events: none;
+  animation: none;
+  margin-left: 4px;
+  min-width: 18px;
+  font-weight: bold;
+  letter-spacing: 0;
+  text-shadow: none;
+}
+.deg-alert.visible {
+  opacity: 1;
+  animation: blink-red 0.5s step-start infinite;
+}
+@keyframes blink-red {
+  0%, 100% {
+    opacity: 1;
+    color: #ff1111;
+    text-shadow: 0 0 6px #ff0000, 0 0 12px #ff000066;
+  }
+  50% {
+    opacity: 0;
+    text-shadow: none;
+  }
+}
+
+.battle-log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+  font-size: clamp(9px, 1.8vw, 11px);
+  color: #ccc;
+  line-height: 1.7;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #333 #000;
+}
+.battle-log p { margin-bottom: 2px; }
+.battle-log p.sys { color: #666; font-size: 0.85em; }
+.battle-log p.dmg { color: #fff; }
+.battle-log p.bad { color: #aaa; }
+.battle-log p.good { color: #eee; }
+
+.battle-actions {
+  border-top: 2px solid #fff;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.action-btn {
+  background: #000;
+  color: #fff;
+  border: 2px solid #fff;
+  font-family: 'bitmap', monospace;
+  font-size: clamp(10px, 2.2vw, 13px);
+  text-transform: lowercase;
+  padding: 10px 6px;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  transition: background 0.1s, color 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.action-btn:hover, .action-btn:active {
+  background: #fff;
+  color: #000;
+}
+.action-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.battle-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 10px;
+  border-top: 1px solid #333;
+  font-size: clamp(8px, 1.5vw, 10px);
+  color: #555;
+  flex-shrink: 0;
+}
+
+#clear-screen {
+  background: #000;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 30px;
+}
+.clear-title {
+  font-size: clamp(20px, 5vw, 36px);
+  color: #fff;
+  text-align: center;
+  animation: flicker 3s infinite;
+}
+.clear-sub {
+  font-size: clamp(10px, 2vw, 13px);
+  color: #777;
+  text-align: center;
+  line-height: 1.8;
+}
+.clear-stats {
+  font-size: clamp(9px, 1.8vw, 11px);
+  color: #555;
+  text-align: center;
+  line-height: 2;
+}
+
+#gameover-screen {
+  background: #000;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+.go-title {
+  font-size: clamp(28px, 7vw, 52px);
+  color: #fff;
+  animation: flicker 1.5s infinite;
+}
+.go-sub {
+  font-size: clamp(10px, 2vw, 12px);
+  color: #555;
+  text-align: center;
+}
+
+#end-screen {
+  background: #000;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 30px;
+}
+.end-text {
+  max-width: 500px;
+  font-size: clamp(10px, 2vw, 13px);
+  color: #999;
+  text-align: center;
+  line-height: 2;
+  animation: fadeIn 4s ease forwards;
+}
+.end-fade {
+  font-size: clamp(8px, 1.5vw, 10px);
+  color: #333;
+  letter-spacing: 0.2em;
+  animation: slowFade 6s ease forwards;
+}
+
+#map-screen {
+  background: #000;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 10px;
+  overflow-y: auto;
+}
+.map-title {
+  font-size: clamp(14px, 3vw, 20px);
+  color: #fff;
+  margin-bottom: 4px;
+  letter-spacing: 0.1em;
+}
+.map-sub {
+  font-size: clamp(8px, 1.6vw, 10px);
+  color: #444;
+  margin-bottom: 20px;
+  letter-spacing: 0.15em;
+}
+.level-list {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.level-item {
+  border: 1px solid #333;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: clamp(10px, 2vw, 12px);
+  color: #666;
+}
+.level-item.unlocked {
+  border-color: #fff;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.level-item.unlocked:hover, .level-item.unlocked:active {
+  background: #111;
+}
+.level-item.completed {
+  border-color: #555;
+  color: #555;
+}
+.level-item .level-stages {
+  font-size: clamp(8px, 1.4vw, 9px);
+  color: #444;
+}
+.level-item.unlocked .level-stages { color: #666; }
+
+@keyframes flicker {
+  0%, 95%, 100% { opacity: 1; }
+  96% { opacity: 0.6; }
+  97% { opacity: 1; }
+  98% { opacity: 0.4; }
+  99% { opacity: 0.9; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slowFade {
+  0% { opacity: 0; }
+  30% { opacity: 0.6; }
+  100% { opacity: 0; }
+}
+
+@keyframes redFlash {
+  0% { background: rgba(180,0,0,0.35); }
+  100% { background: transparent; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #000; }
+::-webkit-scrollbar-thumb { background: #333; }
+
+@media (max-width: 480px) {
+  .battle-left { width: 80px; }
+  .battle-actions { gap: 6px; padding: 8px; }
+  .action-btn { padding: 8px 4px; }
+  .class-card { width: clamp(120px, 38vw, 180px); }
+}
+
+/* ═══════════════════════════════════════════════════
+   DUNGEON CRAWL MODE
+═══════════════════════════════════════════════════ */
+
+#dungeon-screen {
+  background: #000;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'bitmap', monospace;
+}
+
+/* ── TOP HUD ─────────────────────────────────────── */
+.dungeon-hud {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-bottom: 1px solid #2a2a2a;
+  background: #060606;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.dungeon-hud-label {
+  font-size: clamp(8px,1.6vw,10px);
+  color: #444;
+  letter-spacing: 0.08em;
+}
+.dungeon-hud-val {
+  font-size: clamp(9px,1.8vw,11px);
+  color: #ddd;
+  letter-spacing: 0.05em;
+}
+.dungeon-hud-bar {
+  height: 7px;
+  border: 1px solid #333;
+  background: #111;
+  width: 80px;
+}
+.dungeon-hud-bar-fill {
+  height: 100%;
+  background: #fff;
+  transition: width 0.3s;
+}
+.dungeon-hud-sep { color: #2a2a2a; font-size: 14px; }
+.dungeon-key-indicator {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: clamp(9px,1.8vw,11px);
+  color: #888;
+  margin-left: auto;
+}
+.dungeon-key-indicator.has-key { color: #ffd700; }
+.dungeon-fh-indicator {
+  font-size: clamp(9px,1.8vw,11px);
+  color: #aaffaa;
+  letter-spacing: 0.05em;
+}
+
+/* ── MAIN BODY ───────────────────────────────────── */
+.dungeon-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── LEFT PANEL ──────────────────────────────────── */
+.dungeon-left {
+  width: clamp(100px, 22vw, 185px);
+  border-right: 1px solid #1a1a1a;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  background: #030303;
+}
+.dungeon-class-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-bottom: 1px solid #1a1a1a;
+  overflow: hidden;
+}
+.dungeon-class-art {
+  width: 100%;
+  aspect-ratio: 1226/1436;
+  overflow: hidden;
+  background: #060606;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dungeon-class-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.dungeon-class-label {
+  font-size: clamp(7px,1.3vw,9px);
+  color: #555;
+  padding: 4px;
+  text-align: center;
+  letter-spacing: 0.08em;
+}
+.dungeon-stats-panel {
+  padding: 8px 8px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dungeon-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: clamp(8px,1.5vw,10px);
+}
+.dungeon-stat-lbl { color: #444; min-width: 22px; }
+.dungeon-stat-bar {
+  flex: 1;
+  height: 6px;
+  border: 1px solid #2a2a2a;
+  background: #0a0a0a;
+}
+.dungeon-stat-fill { height: 100%; background: #ccc; transition: width 0.3s; }
+.dungeon-stat-val { color: #888; font-size: clamp(7px,1.3vw,9px); min-width: 30px; text-align: right; }
+
+/* ── RIGHT PANEL ─────────────────────────────────── */
+.dungeon-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* ── MAP AREA ────────────────────────────────────── */
+.dungeon-map-area {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  background: #0a0a14;
+  min-height: 0;
+}
+#dungeon-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+/* ── DEG METER (dungeon version) ─────────────────── */
+.dungeon-deg-row {
+  padding: 3px 10px;
+  border-top: 1px solid #1a1a1a;
+  border-bottom: 1px solid #1a1a1a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  background: #030303;
+}
+.dungeon-deg-label { font-size: clamp(7px,1.3vw,9px); color: #3a3a3a; letter-spacing: 0.08em; }
+.dungeon-deg-bar { flex: 1; height: 5px; border: 1px solid #222; background: #000; }
+.dungeon-deg-fill { height: 100%; transition: width 0.4s, background 0.6s; background: #fff; }
+.dungeon-deg-val { font-size: clamp(7px,1.3vw,9px); color: #3a3a3a; }
+.dungeon-deg-alert {
+  font-size: clamp(9px,1.8vw,11px);
+  color: #ff2020;
+  font-weight: bold;
+  opacity: 0;
+  pointer-events: none;
+}
+.dungeon-deg-alert.visible { opacity: 1; animation: blink-red 0.5s step-start infinite; }
+
+/* ── LOG ─────────────────────────────────────────── */
+.dungeon-log {
+  height: clamp(60px, 14vh, 90px);
+  overflow-y: auto;
+  padding: 5px 10px;
+  font-size: clamp(8px, 1.6vw, 10px);
+  color: #888;
+  line-height: 1.7;
+  border-top: 1px solid #1a1a1a;
+  background: #020202;
+  flex-shrink: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #222 #000;
+}
+.dungeon-log p { margin: 0; }
+.dungeon-log p.dl-sys { color: #3a3a3a; }
+.dungeon-log p.dl-find { color: #aaffaa; }
+.dungeon-log p.dl-warn { color: #ffaaaa; }
+.dungeon-log p.dl-key { color: #ffd700; }
+.dungeon-log p.dl-enc { color: #ffddaa; }
+
+/* ── BOTTOM NAV KEYS ─────────────────────────────── */
+.dungeon-nav {
+  border-top: 2px solid #fff;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+  background: #000;
+}
+.dungeon-keys {
+  display: grid;
+  grid-template-columns: repeat(3, 30px);
+  grid-template-rows: repeat(2, 30px);
+  gap: 3px;
+}
+.dkey {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #555;
+  background: #0a0a0a;
+  color: #888;
+  font-family: 'bitmap', monospace;
+  font-size: clamp(9px, 2vw, 12px);
+  cursor: pointer;
+  transition: background 0.08s, border-color 0.08s, color 0.08s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+}
+.dkey:active, .dkey.pressed {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+}
+.dkey.blank { border-color: transparent; background: transparent; cursor: default; }
+.dungeon-hint {
+  font-size: clamp(8px,1.6vw,10px);
+  color: #333;
+  line-height: 1.9;
+  letter-spacing: 0.05em;
+}
+.dungeon-hint .hint-active { color: #888; }
+.dungeon-hint .hint-key { color: #ffd700; }
+
+/* ── FOOTER ──────────────────────────────────────── */
+.dungeon-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 10px;
+  border-top: 1px solid #1a1a1a;
+  font-size: clamp(7px,1.3vw,9px);
+  color: #333;
+  flex-shrink: 0;
+  background: #000;
+}
+.dungeon-footer-btn {
+  background: none;
+  border: 1px solid #333;
+  color: #444;
+  font-family: 'bitmap', monospace;
+  font-size: clamp(7px,1.3vw,9px);
+  padding: 2px 8px;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  transition: border-color 0.1s, color 0.1s;
+}
+.dungeon-footer-btn:hover { border-color: #fff; color: #fff; }
+
+/* ── DUNGEON OVERLAY (encounter popup) ───────────── */
+.dungeon-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 10;
+}
+.dungeon-overlay.active { display: flex; }
+.dungeon-overlay-title {
+  font-size: clamp(14px,3vw,20px);
+  color: #fff;
+  text-align: center;
+  animation: flicker 3s infinite;
+}
+.dungeon-overlay-sub {
+  font-size: clamp(9px,1.8vw,12px);
+  color: #888;
+  text-align: center;
+}
+.dungeon-overlay-btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+/* ── MAP ENTRY on the title map screen ───────────── */
+.level-item.dungeon-entry {
+  border-color: #444;
+  cursor: pointer;
+  transition: background 0.1s;
+  background: #000;
+}
+.level-item.dungeon-entry:hover { background: #0d0d1a; border-color: #888; }
+.dungeon-entry-tag {
+  font-size: clamp(7px,1.3vw,9px);
+  color: #555;
+  border: 1px solid #333;
+  padding: 1px 5px;
+  letter-spacing: 0.08em;
+}
+
+</style>
+</head>
+<body>
+<div id="app">
+
+  
+  <div id="title-screen" class="screen active">
+    <p class="title-story">
+      you wake up and there’s no sky.<br>
+      just cold, crumbling walls everywhere, stretching into the dark.<br>
+      no color, no warmth. even the silence feels wrong.<br>
+      it doesn't make sense.<br><br>
+      you take a few steps and see..<br>
+      A girl, standing there like she’s been waiting the whole time.<br>
+      she gives you a cold, menacing smile.<br>
+      something is definitely wrong.<br>
+</p>
+    <div class="title-main">ashes still sing</div>
+    <div class="title-sub">a steel, shadow & melody alternative</div>
+    <button class="btn" onclick="showScreen('class-screen')">begin</button>
+  </div>
+
+  
+  <div id="class-screen" class="screen">
+    <div class="class-title">choose your echo</div>
+    <div class="class-subtitle">once chosen, you carry it to the end</div>
+    <div class="class-grid">
+      
+      <div class="class-card" onclick="selectClass('knight')" id="card-knight">
+        <div class="class-card-img">
+          <img src="styles/card_knight.png" alt="knight" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;flex-direction:column;gap:8px;">
+            <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+              <rect x="35" y="5" width="30" height="30" rx="2" fill="none" stroke="#fff" stroke-width="2"/>
+              <rect x="30" y="10" width="40" height="25" rx="1" fill="none" stroke="#888" stroke-width="1"/>
+              <line x1="50" y1="35" x2="50" y2="42" stroke="#fff" stroke-width="2"/>
+              <rect x="28" y="42" width="44" height="45" rx="2" fill="none" stroke="#fff" stroke-width="2"/>
+              <rect x="22" y="44" width="14" height="38" rx="2" fill="none" stroke="#888" stroke-width="1.5"/>
+              <rect x="64" y="44" width="14" height="38" rx="2" fill="none" stroke="#888" stroke-width="1.5"/>
+              <rect x="33" y="87" width="15" height="28" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/>
+              <rect x="52" y="87" width="15" height="28" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/>
+              <line x1="50" y1="55" x2="50" y2="80" stroke="#555" stroke-width="1" stroke-dasharray="3,2"/>
+              <line x1="35" y1="65" x2="65" y2="65" stroke="#555" stroke-width="1"/>
+              <rect x="44" y="48" width="12" height="8" fill="none" stroke="#aaa" stroke-width="1"/>
+              <circle cx="50" cy="17" r="4" fill="none" stroke="#ccc" stroke-width="1.5"/>
+            </svg>
+          </div>
+        </div>
+        <div class="class-card-info">
+          <div class="class-name">knight</div>
+          <div class="class-desc">iron will. heavy armor. strikes with purpose, not haste.</div>
+          <div class="class-skill-label">unique skill &gt;&gt;</div>
+          <div class="class-skill-name">iron bulwark</div>
+        </div>
+      </div>
+      
+      <div class="class-card" onclick="selectClass('trickster')" id="card-trickster">
+        <div class="class-card-img">
+          <img src="styles/card_trickster.png" alt="trickster" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;flex-direction:column;">
+            <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="50" cy="18" rx="14" ry="16" fill="none" stroke="#fff" stroke-width="1.5"/>
+              <path d="M36 28 Q20 40 22 60 Q24 80 38 87 Q50 92 62 87 Q76 80 78 60 Q80 40 64 28" fill="none" stroke="#fff" stroke-width="1.5"/>
+              <line x1="22" y1="55" x2="10" y2="70" stroke="#888" stroke-width="1.5"/>
+              <line x1="78" y1="55" x2="90" y2="70" stroke="#888" stroke-width="1.5"/>
+              <line x1="10" y1="70" x2="8" y2="90" stroke="#888" stroke-width="1.5"/>
+              <line x1="90" y1="70" x2="92" y2="90" stroke="#888" stroke-width="1.5"/>
+              <line x1="38" y1="87" x2="35" y2="115" stroke="#fff" stroke-width="1.5"/>
+              <line x1="62" y1="87" x2="65" y2="115" stroke="#fff" stroke-width="1.5"/>
+              
+              <line x1="75" y1="55" x2="95" y2="35" stroke="#ccc" stroke-width="2"/>
+              <polygon points="95,35 90,38 92,32" fill="#fff"/>
+              <rect x="80" y="52" width="8" height="3" rx="1" fill="#888" transform="rotate(-45 80 52)"/>
+              
+              <line x1="43" y1="16" x2="43" y2="22" stroke="#555" stroke-width="1"/>
+              <line x1="57" y1="16" x2="57" y2="22" stroke="#555" stroke-width="1"/>
+              <path d="M44 23 Q50 27 56 23" fill="none" stroke="#555" stroke-width="1"/>
+            </svg>
+          </div>
+        </div>
+        <div class="class-card-info">
+          <div class="class-name">trickster</div>
+          <div class="class-desc">quick hands. quicker lies. lives on the edge of luck.</div>
+          <div class="class-skill-label">unique skill &gt;&gt;</div>
+          <div class="class-skill-name">last laugh</div>
+        </div>
+      </div>
+      
+      <div class="class-card" onclick="selectClass('bard')" id="card-bard">
+        <div class="class-card-img">
+          <img src="styles/card_bard.png" alt="bard" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;flex-direction:column;">
+            <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+              
+              <ellipse cx="50" cy="18" rx="13" ry="14" fill="none" stroke="#fff" stroke-width="1.5"/>
+              <path d="M37 28 Q22 45 24 75 Q26 95 42 100 Q50 103 58 100 Q74 95 76 75 Q78 45 63 28" fill="none" stroke="#fff" stroke-width="1.5"/>
+              
+              <ellipse cx="72" cy="72" rx="12" ry="14" fill="none" stroke="#ccc" stroke-width="1.5"/>
+              <line x1="72" y1="58" x2="72" y2="38" stroke="#ccc" stroke-width="1.5"/>
+              <line x1="68" y1="38" x2="76" y2="38" stroke="#ccc" stroke-width="1.5"/>
+              <line x1="65" y1="68" x2="79" y2="68" stroke="#888" stroke-width="0.8"/>
+              <line x1="65" y1="73" x2="79" y2="73" stroke="#888" stroke-width="0.8"/>
+              <line x1="65" y1="78" x2="79" y2="78" stroke="#888" stroke-width="0.8"/>
+              
+              <line x1="37" y1="42" x2="24" y2="58" stroke="#888" stroke-width="1.5"/>
+              <line x1="63" y1="42" x2="76" y2="58" stroke="#888" stroke-width="1.5"/>
+              
+              <ellipse cx="50" cy="7" rx="16" ry="5" fill="none" stroke="#fff" stroke-width="1.5"/>
+              <line x1="50" y1="7" x2="56" y2="-5" stroke="#fff" stroke-width="1.5"/>
+              
+              <line x1="42" y1="100" x2="40" y2="115" stroke="#fff" stroke-width="1.5"/>
+              <line x1="58" y1="100" x2="60" y2="115" stroke="#fff" stroke-width="1.5"/>
+              
+              <text x="10" y="30" fill="#555" font-size="8" font-family="serif">♩</text>
+              <text x="16" y="18" fill="#444" font-size="6" font-family="serif">♪</text>
+            </svg>
+          </div>
+        </div>
+        <div class="class-card-info">
+          <div class="class-name">bard</div>
+          <div class="class-desc">words cut deep. songs heal. a mouth is the most dangerous weapon.</div>
+          <div class="class-skill-label">unique skill &gt;&gt;</div>
+          <div class="class-skill-name">dirge</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn class-select-btn" onclick="confirmClass()" id="confirm-class-btn" disabled>begin journey</button>
+  </div>
+
+  
+  <div id="map-screen" class="screen">
+    <div class="map-title">the broken path</div>
+    <div class="map-sub">choose your next step</div>
+    <div class="level-list" id="level-list"></div>
+  </div>
+
+  
+  <div id="battle-screen" class="screen">
+    
+    <div class="battle-hud">
+      <div class="hud-row">
+        <span class="hud-label">lv.</span>
+        <span id="hud-level" style="color:#fff;font-size:clamp(9px,1.8vw,11px)">1</span>
+        <span style="flex:1"></span>
+        <span class="hud-label">sp</span>
+        <div class="hud-bar-wrap" style="max-width:80px;">
+          <div class="hud-bar-fill sp" id="sp-bar" style="width:100%"></div>
+        </div>
+        <span class="hud-val" id="sp-val">3/3</span>
+      </div>
+      <div class="hud-row">
+        <span class="hud-label">hp</span>
+        <div class="hud-bar-wrap">
+          <div class="hud-bar-fill" id="hp-bar" style="width:100%"></div>
+        </div>
+        <span class="hud-val" id="hp-val">100/100</span>
+      </div>
+    </div>
+
+    
+    <div class="battle-main">
+      
+      <div class="battle-left" id="battle-left">
+        <div class="battle-card-img" id="battle-card-img">
+          <div class="battle-card-art" id="battle-card-art">
+            
+          </div>
+          <div class="battle-card-label" id="battle-class-name"></div>
+        </div>
+      </div>
+
+      
+      <div class="battle-right">
+        
+        <div class="battle-enemy-area">
+          <div class="enemy-circle-wrap">
+            <div class="enemy-circle" id="enemy-circle">
+              <span class="enemy-name-display" id="enemy-name-display">---</span>
+            </div>
+          </div>
+          <pre class="enemy-art" id="enemy-art"></pre>
+          <div class="enemy-hp-bar-wrap">
+            <div class="enemy-hp-bar" id="enemy-hp-bar" style="width:100%"></div>
+          </div>
+          <div class="enemy-hp-label" id="enemy-hp-label">??? / ???</div>
+        </div>
+
+        
+        <div class="deg-meter-row">
+          <span class="deg-meter-label">degradation</span>
+          <div class="deg-meter-bar">
+            <div class="deg-meter-fill" id="deg-fill" style="width:0%"></div>
+          </div>
+          <span style="font-size:clamp(7px,1.3vw,9px);color:#555;margin-left:6px;" id="deg-val">0/100</span>
+          <span class="deg-alert" id="deg-alert">(!)</span>
+        </div>
+
+        
+        <div class="battle-log" id="battle-log">
+          <p class="sys">. . .</p>
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="battle-actions">
+      <button class="action-btn" id="btn-attack" onclick="playerAction('attack')">attack</button>
+      <button class="action-btn" id="btn-cleanse" onclick="playerAction('cleanse')">cleanse</button>
+      <button class="action-btn" id="btn-slip" onclick="playerAction('slip')">slip</button>
+      <button class="action-btn" id="btn-break" onclick="playerAction('break')">break</button>
+    </div>
+
+    
+    <div class="battle-footer">
+      <span id="footer-stage">stage 1</span>
+      <span id="footer-skill" style="color:#888;cursor:pointer;" onclick="useClassSkill()">[ skill ]</span>
+      <span id="footer-level">level 1</span>
+    </div>
+  </div>
+
+  
+  <div id="clear-screen" class="screen">
+    <div class="clear-title" id="clear-title">stage cleared</div>
+    <div class="clear-sub" id="clear-sub"></div>
+    <div class="clear-stats" id="clear-stats"></div>
+    <button class="btn" onclick="continueFromClear()">continue</button>
+  </div>
+
+  
+  <div id="gameover-screen" class="screen">
+    <div class="go-title">you fell</div>
+    <div class="go-sub">a black warp swallowed you.</div>
+    <div class="go-sub" id="go-fh-display" style="color:#aaffaa;font-size:clamp(9px,1.8vw,11px);margin-top:6px;"></div>
+    <button class="btn" style="margin-top:20px" onclick="retryFromDeath()">return to map</button>
+    <button class="btn" style="margin-top:10px;border-color:#444;color:#555;" onclick="restartGame()">start over</button>
+  </div>
+
+  
+  <div id="end-screen" class="screen">
+    <div class="end-text" id="end-text"></div>
+    <div class="end-fade">. . . t h e  e n d . . .</div>
+    <button class="btn" style="margin-top:30px" onclick="restartGame()">begin again</button>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════
+       DUNGEON CRAWL SCREEN
+  ══════════════════════════════════════════ -->
+  <div id="dungeon-screen" class="screen">
+
+    <!-- TOP HUD -->
+    <div class="dungeon-hud">
+      <span class="dungeon-hud-label">lv.</span>
+      <span class="dungeon-hud-val" id="d-hud-level">1</span>
+      <span class="dungeon-hud-sep">|</span>
+      <span class="dungeon-hud-label">hp</span>
+      <div class="dungeon-hud-bar">
+        <div class="dungeon-hud-bar-fill" id="d-hp-bar" style="width:100%"></div>
+      </div>
+      <span class="dungeon-hud-val" id="d-hp-val">—</span>
+      <span class="dungeon-hud-sep">|</span>
+      <span class="dungeon-hud-label">sp</span>
+      <div class="dungeon-hud-bar" style="width:50px;">
+        <div class="dungeon-hud-bar-fill" id="d-sp-bar" style="width:100%;background:#aaa;"></div>
+      </div>
+      <span class="dungeon-hud-val" id="d-sp-val">—</span>
+      <span class="dungeon-hud-sep" style="margin-left:auto">|</span>
+      <span class="dungeon-fh-indicator">fH <span id="d-fh-val">0</span></span>
+      <span class="dungeon-hud-sep">|</span>
+      <span class="dungeon-key-indicator" id="d-key-indicator">🗝 no key</span>
+    </div>
+
+    <!-- MAIN BODY -->
+    <div class="dungeon-body">
+
+      <!-- LEFT: class card + stats -->
+      <div class="dungeon-left">
+        <div class="dungeon-class-card">
+          <div class="dungeon-class-art" id="d-class-art"></div>
+          <div class="dungeon-class-label" id="d-class-label">—</div>
+        </div>
+        <div class="dungeon-stats-panel">
+          <div class="dungeon-stat-row">
+            <span class="dungeon-stat-lbl">hp</span>
+            <div class="dungeon-stat-bar"><div class="dungeon-stat-fill" id="d-stat-hp" style="width:100%"></div></div>
+            <span class="dungeon-stat-val" id="d-stat-hp-v">—</span>
+          </div>
+          <div class="dungeon-stat-row">
+            <span class="dungeon-stat-lbl">sp</span>
+            <div class="dungeon-stat-bar"><div class="dungeon-stat-fill" id="d-stat-sp" style="width:100%;background:#888;"></div></div>
+            <span class="dungeon-stat-val" id="d-stat-sp-v">—</span>
+          </div>
+          <div class="dungeon-stat-row" style="margin-top:4px;">
+            <span class="dungeon-stat-lbl" style="color:#444;font-size:clamp(7px,1.3vw,9px);">pos</span>
+            <span class="dungeon-stat-val" id="d-pos-val" style="color:#444;font-size:clamp(7px,1.3vw,9px);min-width:60px;text-align:left;">—</span>
+          </div>
+          <div class="dungeon-stat-row">
+            <span class="dungeon-stat-lbl" style="color:#444;font-size:clamp(7px,1.3vw,9px);">floor</span>
+            <span class="dungeon-stat-val" id="d-floor-val" style="color:#aaa;font-size:clamp(7px,1.3vw,9px);min-width:60px;text-align:left;">B1</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: map + log -->
+      <div class="dungeon-right">
+
+        <!-- MAP CANVAS -->
+        <div class="dungeon-map-area">
+          <canvas id="dungeon-canvas"></canvas>
+          <!-- encounter overlay -->
+          <div class="dungeon-overlay" id="dungeon-overlay">
+            <div class="dungeon-overlay-title" id="dov-title">—</div>
+            <div class="dungeon-overlay-sub" id="dov-sub">—</div>
+            <div class="dungeon-overlay-btns" id="dov-btns"></div>
+          </div>
+        </div>
+
+        <!-- DEG METER -->
+        <div class="dungeon-deg-row">
+          <span class="dungeon-deg-label">degradation</span>
+          <div class="dungeon-deg-bar"><div class="dungeon-deg-fill" id="d-deg-fill" style="width:0%"></div></div>
+          <span class="dungeon-deg-val" id="d-deg-val">0/100</span>
+          <span class="dungeon-deg-alert" id="d-deg-alert">(!)</span>
+        </div>
+
+        <!-- DUNGEON LOG -->
+        <div class="dungeon-log" id="dungeon-log">
+          <p class="dl-sys">the dungeon breathes around you.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- NAV CONTROLS -->
+    <div class="dungeon-nav">
+      <div class="dungeon-keys">
+        <div class="dkey blank"></div>
+        <div class="dkey" id="dkey-w" onclick="dungeonMove('up')" ontouchstart="dungeonMove('up')">W</div>
+        <div class="dkey blank"></div>
+        <div class="dkey" id="dkey-a" onclick="dungeonMove('left')" ontouchstart="dungeonMove('left')">A</div>
+        <div class="dkey" id="dkey-s" onclick="dungeonMove('down')" ontouchstart="dungeonMove('down')">S</div>
+        <div class="dkey" id="dkey-d" onclick="dungeonMove('right')" ontouchstart="dungeonMove('right')">D</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;">
+        <span style="font-size:clamp(7px,1.4vw,9px);color:#333;letter-spacing:0.08em;">navigate the dungeon</span>
+        <button id="d-interact-btn" class="dkey" onclick="dungeonInteract()"
+          style="width:auto;padding:0 14px;min-width:80px;border-color:#333;color:#444;font-size:clamp(8px,1.6vw,10px);pointer-events:none;opacity:0.35;"
+          disabled>[ interact ]</button>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="dungeon-footer">
+      <span id="d-footer-enemies">enemies: 0</span>
+      <span>ashes still sing — dungeon</span>
+      <button class="dungeon-footer-btn" onclick="exitDungeon()">← exit dungeon</button>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+// ─── SFX ─────────────────────────────────────────────────────────────────────
+const _sfxCtx = (() => {
+  try { return new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return null; }
+})();
+
+function _beep({ freq = 220, type = 'square', vol = 0.18, dur = 0.08, freqEnd, attack = 0.005 } = {}) {
+  if (!_sfxCtx) return;
+  const osc = _sfxCtx.createOscillator();
+  const gain = _sfxCtx.createGain();
+  osc.connect(gain); gain.connect(_sfxCtx.destination);
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, _sfxCtx.currentTime);
+  if (freqEnd) osc.frequency.exponentialRampToValueAtTime(freqEnd, _sfxCtx.currentTime + dur);
+  gain.gain.setValueAtTime(0.0001, _sfxCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(vol, _sfxCtx.currentTime + attack);
+  gain.gain.exponentialRampToValueAtTime(0.0001, _sfxCtx.currentTime + dur);
+  osc.start(_sfxCtx.currentTime);
+  osc.stop(_sfxCtx.currentTime + dur + 0.01);
+}
+
+const SFX = {
+  click:   () => _beep({ freq: 300, type: 'square',   vol: 0.12, dur: 0.06 }),
+  confirm: () => { _beep({ freq: 280, type: 'square', vol: 0.15, dur: 0.07 });
+                   setTimeout(() => _beep({ freq: 420, type: 'square', vol: 0.12, dur: 0.09 }), 70); },
+  attack:  () => _beep({ freq: 160, type: 'sawtooth', vol: 0.22, dur: 0.12, freqEnd: 80 }),
+  heavy:   () => _beep({ freq: 100, type: 'sawtooth', vol: 0.28, dur: 0.18, freqEnd: 50 }),
+  slip:    () => _beep({ freq: 520, type: 'sine',     vol: 0.14, dur: 0.10, freqEnd: 260 }),
+  cleanse: () => _beep({ freq: 360, type: 'sine',     vol: 0.12, dur: 0.14, freqEnd: 480 }),
+  skill:   () => { _beep({ freq: 200, type: 'square', vol: 0.18, dur: 0.08 });
+                   setTimeout(() => _beep({ freq: 340, type: 'square', vol: 0.15, dur: 0.10 }), 80);
+                   setTimeout(() => _beep({ freq: 500, type: 'sine',   vol: 0.10, dur: 0.14 }), 160); },
+  hit:     () => _beep({ freq: 120, type: 'sawtooth', vol: 0.25, dur: 0.15, freqEnd: 60 }),
+  victory: () => { [300,380,480,600].forEach((f,i) =>
+                   setTimeout(() => _beep({ freq: f, type: 'square', vol: 0.14, dur: 0.12 }), i * 90)); },
+  death:   () => { [200,160,120,80].forEach((f,i) =>
+                   setTimeout(() => _beep({ freq: f, type: 'sawtooth', vol: 0.20, dur: 0.18 }), i * 110)); },
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
+const CLASSES = {
+  knight: {
+    name: 'knight',
+    hp: 210, sp: 3, spMax: 3,
+    atk: 24, def: 0.25,
+    skillName: 'iron bulwark',
+    skillDesc: 'reduces incoming damage by 50% next enemy turn. costs 1 sp.',
+    skillCost: 1,
+    cardSvg: 'knight'
+  },
+  trickster: {
+    name: 'trickster',
+    hp: 150, sp: 4, spMax: 4,
+    atk: 30, def: 0.1,
+    skillName: 'last laugh',
+    skillDesc: 'if degradation > 50, deal double damage this turn. costs 1 sp.',
+    skillCost: 1,
+    cardSvg: 'trickster'
+  },
+  bard: {
+    name: 'bard',
+    hp: 165, sp: 5, spMax: 5,
+    atk: 20, def: 0.15,
+    skillName: 'dirge',
+    skillDesc: 'reduce enemy atk by 30% for 2 turns. costs 2 sp.',
+    skillCost: 2,
+    cardSvg: 'bard'
+  }
+};
+
+const LEVELS = [
+  {
+    name: 'the husk fields',
+    enemies: ['starved husk', 'drip maw', 'thin crawler', 'bone picker'],
+    boss: { name: 'plague rat king', hp: 220, atk: 15, reward: 'the rats bow. something shifts.' }
+  },
+  {
+    name: 'the rusted keep',
+    enemies: ['shroud fragment', 'mimic shell', 'blur walker', 'hidden thread'],
+    boss: { name: 'sir rustblade', hp: 280, atk: 19, reward: 'his blade shatters. you keep walking.' }
+  },
+  {
+    name: 'the crow court',
+    enemies: ['bone guard', 'rib hound', 'spine lash', 'hollow carrier'],
+    boss: { name: 'crowfather elric', hp: 340, atk: 24, reward: 'feathers everywhere. no answers.' }
+  },
+  {
+    name: 'the blade district',
+    enemies: ['blade echo', 'step cutter', 'guard disciple', 'misstep punisher'],
+    boss: { name: 'blant the bladesman', hp: 400, atk: 28, reward: 'he falls without a word.' }
+  },
+  {
+    name: 'the watcher maze',
+    enemies: ['watcher fragment', 'blind seeker', 'pulse warden', 'odd stalker', 'tonberry'],
+    boss: { name: 'ribcage matron', hp: 460, atk: 33, reward: 'she was already dying. you just helped.' }
+  },
+  {
+    name: 'the iron end',
+    enemies: ['laughing split', 'wrong walker', 'joy mask', 'end fragment', 'bahamut'],
+    boss: { name: 'iron maiden', hp: 520, atk: 37, reward: 'end' }
+  }
+];
+
+const ENEMY_STATS = {
+
+  'starved husk':    { hp: 55,  atk: 9  },
+  'drip maw':        { hp: 65,  atk: 10 },
+  'thin crawler':    { hp: 60,  atk: 12 },
+  'bone picker':     { hp: 70,  atk: 11 },
+
+  'shroud fragment': { hp: 90,  atk: 13 },
+  'mimic shell':     { hp: 95,  atk: 15 },
+  'blur walker':     { hp: 85,  atk: 16 },
+  'hidden thread':   { hp: 100, atk: 15 },
+
+  'bone guard':      { hp: 130, atk: 19 },
+  'rib hound':       { hp: 120, atk: 21 },
+  'spine lash':      { hp: 125, atk: 22 },
+  'hollow carrier':  { hp: 140, atk: 20 },
+
+  'blade echo':      { hp: 170, atk: 25 },
+  'step cutter':     { hp: 160, atk: 27 },
+  'guard disciple':  { hp: 175, atk: 24 },
+  'misstep punisher':{ hp: 165, atk: 28 },
+
+  'watcher fragment':{ hp: 210, atk: 30 },
+  'blind seeker':    { hp: 200, atk: 31 },
+  'pulse warden':    { hp: 220, atk: 28 },
+  'odd stalker':   { hp: 215, atk: 33 },
+  'tonberry':        { hp: 240, atk: 34 },
+
+  'laughing split':  { hp: 260, atk: 36 },
+  'wrong walker':    { hp: 250, atk: 37 },
+  'joy mask':        { hp: 270, atk: 34 },
+  'end fragment':    { hp: 280, atk: 39 },
+  'bahamut':         { hp: 320, atk: 41 }
+};
+
+let state = {
+  chosenClass: null,
+  player: null,
+  enemy: null,
+  currentLevel: 0,
+  currentStage: 0,
+  unlockedLevels: 1,
+  degradation: 0,
+  bulwark: false,
+  dirgeturns: 0,
+  skillUsedThisBattle: false,
+  playerTurn: true,
+  inBattle: false
+};
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+let selectedClass = null;
+
+function selectClass(cls) {
+  SFX.click();
+  selectedClass = cls;
+  document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('card-' + cls).classList.add('selected');
+  document.getElementById('confirm-class-btn').disabled = false;
+}
+
+function confirmClass() {
+  if (!selectedClass) return;
+  SFX.confirm();
+  state.chosenClass = selectedClass;
+  showMap();
+}
+
+function showMap() {
+  showScreen('map-screen');
+  renderMap();
+}
+
+function renderMap() {
+  const list = document.getElementById('level-list');
+  list.innerHTML = '';
+  // Dungeon mode entry (always available)
+  if (state.chosenClass) {
+    const dungeonItem = document.createElement('div');
+    dungeonItem.className = 'level-item dungeon-entry';
+    dungeonItem.innerHTML = '<span>⬡ the lost dungeon</span><span class="dungeon-entry-tag">survival</span>';
+    dungeonItem.onclick = () => { SFX.click(); openDungeon(); };
+    list.appendChild(dungeonItem);
+  }
+
+  LEVELS.forEach((lv, i) => {
+    const item = document.createElement('div');
+    const isUnlocked = i < state.unlockedLevels;
+    const isCompleted = i < state.currentLevel || (i === state.currentLevel && state.currentStage > 4);
+
+    if (!isUnlocked) {
+      return;
+    } else if (isCompleted) {
+      item.className = 'level-item completed';
+      item.innerHTML = `<span>level ${i+1} — ${lv.name}</span><span class="level-stages">cleared</span>`;
+    } else {
+      item.className = 'level-item unlocked';
+      const stageLabel = state.currentLevel === i ? `stage ${state.currentStage + 1}/5` : 'stage 1/5';
+      item.innerHTML = `<span>level ${i+1} — ${lv.name}</span><span class="level-stages">${stageLabel}</span>`;
+      item.onclick = () => startLevel(i);
+    }
+    list.appendChild(item);
+  });
+}
+
+function startLevel(lvIdx) {
+  state.currentLevel = lvIdx;
+  startStage();
+}
+
+function startStage() {
+  const lv = LEVELS[state.currentLevel];
+  const classData = CLASSES[state.chosenClass];
+
+  if (!state.player) {
+    state.player = {
+      hp: classData.hp,
+      maxHp: classData.hp,
+      sp: classData.sp,
+      spMax: classData.spMax,
+      atk: classData.atk,
+      def: classData.def
+    };
+  }
+
+  let enemyName, enemyHp, enemyAtk;
+  if (state.currentStage === 4) {
+    enemyName = lv.boss.name;
+    enemyHp = lv.boss.hp;
+    enemyAtk = lv.boss.atk;
+  } else {
+    enemyName = lv.enemies[state.currentStage];
+    const stats = ENEMY_STATS[enemyName] || { hp: 80, atk: 15 };
+    enemyHp = stats.hp;
+    enemyAtk = stats.atk;
+  }
+
+  state.enemy = { name: enemyName, hp: enemyHp, maxHp: enemyHp, atk: enemyAtk };
+  state.degradation = 0;
+  state.bulwark = false;
+  state.dirgeturns = 0;
+  state.skillUsedThisBattle = false;
+  state.playerTurn = true;
+  state.inBattle = true;
+
+  setupBattleUI();
+  showScreen('battle-screen');
+  logMsg(`a ${enemyName} appears.`, 'sys');
+  setActionsEnabled(true);
+}
+
+function setupBattleUI() {
+  const cls = state.chosenClass;
+  const classData = CLASSES[cls];
+
+  document.getElementById('battle-class-name').textContent = cls;
+  const cardArt = document.getElementById('battle-card-art');
+  const img = document.createElement('img');
+  img.src = `styles/card_${cls}.png`;
+  img.alt = cls;
+  img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+  img.onerror = function() {
+    this.style.display = 'none';
+    const svgWrap = document.createElement('div');
+    svgWrap.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;';
+    svgWrap.innerHTML = getCardSVG(cls);
+    cardArt.appendChild(svgWrap);
+  };
+  cardArt.innerHTML = '';
+  cardArt.appendChild(img);
+
+  document.getElementById('footer-stage').textContent = `stage ${state.currentStage + 1}`;
+  document.getElementById('footer-level').textContent = `level ${state.currentLevel + 1}`;
+  document.getElementById('hud-level').textContent = state.currentLevel + 1;
+  document.getElementById('footer-skill').textContent = `[ ${classData.skillName} ]`;
+
+  updateHUD();
+  updateEnemyUI();
+  document.getElementById('battle-log').innerHTML = '';
+}
+
+function getCardSVG(cls) {
+
+  const svgs = {
+    knight: `<svg viewBox="0 0 122 143" xmlns="http://www.w3.org/2000/svg">
+      <rect width="122" height="143" fill="#050505"/>
+      <rect x="35" y="8" width="52" height="52" rx="3" fill="none" stroke="#fff" stroke-width="2"/>
+      <rect x="30" y="13" width="62" height="42" rx="2" fill="none" stroke="#555" stroke-width="1"/>
+      <rect x="44" y="55" width="34" height="5" fill="none" stroke="#888" stroke-width="1"/>
+      <rect x="30" y="60" width="62" height="70" rx="2" fill="none" stroke="#fff" stroke-width="2"/>
+      <rect x="18" y="63" width="20" height="55" rx="2" fill="none" stroke="#888" stroke-width="1.5"/>
+      <rect x="84" y="63" width="20" height="55" rx="2" fill="none" stroke="#888" stroke-width="1.5"/>
+      <rect x="38" y="130" width="20" height="10" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/>
+      <rect x="64" y="130" width="20" height="10" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/>
+      <line x1="61" y1="65" x2="61" y2="125" stroke="#333" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="35" y1="92" x2="87" y2="92" stroke="#333" stroke-width="1"/>
+      <rect x="50" y="68" width="22" height="14" fill="none" stroke="#aaa" stroke-width="1.5"/>
+      <circle cx="61" cy="25" r="8" fill="none" stroke="#ccc" stroke-width="2"/>
+      <line x1="55" y1="25" x2="67" y2="25" stroke="#555" stroke-width="1"/>
+      <line x1="61" y1="19" x2="61" y2="31" stroke="#555" stroke-width="1"/>
+      <text x="61" y="140" text-anchor="middle" fill="#444" font-size="5" font-family="monospace">knight</text>
+    </svg>`,
+    trickster: `<svg viewBox="0 0 122 143" xmlns="http://www.w3.org/2000/svg">
+      <rect width="122" height="143" fill="#050505"/>
+      <ellipse cx="61" cy="22" rx="18" ry="20" fill="none" stroke="#fff" stroke-width="2"/>
+      <path d="M43 36 Q22 55 24 82 Q26 108 44 116 Q61 122 78 116 Q96 108 98 82 Q100 55 79 36" fill="none" stroke="#fff" stroke-width="2"/>
+      <line x1="24" y1="72" x2="8" y2="92" stroke="#888" stroke-width="1.5"/>
+      <line x1="98" y1="72" x2="114" y2="92" stroke="#888" stroke-width="1.5"/>
+      <line x1="44" y1="116" x2="40" y2="138" stroke="#fff" stroke-width="1.5"/>
+      <line x1="78" y1="116" x2="82" y2="138" stroke="#fff" stroke-width="1.5"/>
+      <line x1="95" y1="75" x2="115" y2="55" stroke="#ccc" stroke-width="2.5"/>
+      <polygon points="115,55 109,59 111,52" fill="#fff"/>
+      <rect x="100" y="72" width="10" height="4" rx="1" fill="#888" transform="rotate(-45 100 72)"/>
+      <line x1="54" y1="19" x2="54" y2="27" stroke="#555" stroke-width="1.5"/>
+      <line x1="68" y1="19" x2="68" y2="27" stroke="#555" stroke-width="1.5"/>
+      <path d="M55 28 Q61 33 67 28" fill="none" stroke="#555" stroke-width="1.5"/>
+      <text x="61" y="140" text-anchor="middle" fill="#444" font-size="5" font-family="monospace">trickster</text>
+    </svg>`,
+    bard: `<svg viewBox="0 0 122 143" xmlns="http://www.w3.org/2000/svg">
+      <rect width="122" height="143" fill="#050505"/>
+      <ellipse cx="61" cy="24" rx="16" ry="18" fill="none" stroke="#fff" stroke-width="2"/>
+      <ellipse cx="61" cy="10" rx="22" ry="7" fill="none" stroke="#fff" stroke-width="1.5"/>
+      <line x1="61" y1="10" x2="70" y2="-4" stroke="#fff" stroke-width="1.5"/>
+      <path d="M45 38 Q26 58 28 90 Q30 115 48 122 Q61 128 74 122 Q92 115 94 90 Q96 58 77 38" fill="none" stroke="#fff" stroke-width="2"/>
+      <ellipse cx="90" cy="90" rx="16" ry="18" fill="none" stroke="#ccc" stroke-width="1.5"/>
+      <line x1="90" y1="72" x2="90" y2="50" stroke="#ccc" stroke-width="1.5"/>
+      <line x1="85" y1="50" x2="95" y2="50" stroke="#ccc" stroke-width="1.5"/>
+      <line x1="80" y1="86" x2="100" y2="86" stroke="#888" stroke-width="0.8"/>
+      <line x1="80" y1="92" x2="100" y2="92" stroke="#888" stroke-width="0.8"/>
+      <line x1="80" y1="98" x2="100" y2="98" stroke="#888" stroke-width="0.8"/>
+      <line x1="45" y1="55" x2="28" y2="76" stroke="#888" stroke-width="1.5"/>
+      <line x1="77" y1="55" x2="90" y2="72" stroke="#888" stroke-width="1.5"/>
+      <line x1="48" y1="122" x2="44" y2="140" stroke="#fff" stroke-width="1.5"/>
+      <line x1="74" y1="122" x2="78" y2="140" stroke="#fff" stroke-width="1.5"/>
+      <text x="15" y="40" fill="#444" font-size="10" font-family="serif">♩</text>
+      <text x="22" y="22" fill="#333" font-size="8" font-family="serif">♪</text>
+      <text x="61" y="140" text-anchor="middle" fill="#444" font-size="5" font-family="monospace">bard</text>
+    </svg>`
+  };
+  return svgs[cls] || svgs['knight'];
+}
+
+function updateHUD() {
+  const p = state.player;
+  document.getElementById('hp-bar').style.width = Math.max(0, (p.hp / p.maxHp) * 100) + '%';
+  document.getElementById('hp-val').textContent = `${Math.max(0,Math.floor(p.hp))}/${p.maxHp}`;
+  document.getElementById('sp-bar').style.width = (p.sp / p.spMax) * 100 + '%';
+  document.getElementById('sp-val').textContent = `${p.sp}/${p.spMax}`;
+
+  const deg = state.degradation;
+  document.getElementById('deg-fill').style.width = deg + '%';
+  document.getElementById('deg-val').textContent = `${Math.floor(deg)}/100`;
+
+  const degEl = document.getElementById('deg-fill');
+  const alertEl = document.getElementById('deg-alert');
+  degEl.className = 'deg-meter-fill';
+
+  // Smooth white -> rose -> red -> deep crimson across full 0-100
+  const t = Math.max(0, Math.min(1, deg / 100));
+  let r, g, b;
+  if (t < 0.3) {
+    // white -> light rose
+    const s = t / 0.3;
+    r = 255; g = Math.round(255 - s * 111); b = Math.round(255 - s * 111);
+  } else if (t < 0.55) {
+    // rose -> orange-red
+    const s = (t - 0.3) / 0.25;
+    r = 255; g = Math.round(144 - s * 93); b = Math.round(144 - s * 144);
+  } else if (t < 0.8) {
+    // orange-red -> pure red
+    const s = (t - 0.55) / 0.25;
+    r = 255; g = Math.round(51 - s * 51); b = 0;
+  } else {
+    // pure red -> deep crimson
+    const s = (t - 0.8) / 0.2;
+    r = Math.round(255 - s * 148); g = 0; b = 0;
+  }
+  degEl.style.background = `rgb(${r},${g},${b})`;
+
+  if (deg >= 60) {
+    alertEl.classList.add('visible');
+  } else {
+    alertEl.classList.remove('visible');
+  }
+
+  if (deg >= 80) {
+    const glowIntensity = Math.round(((t - 0.8) / 0.2) * 8);
+    degEl.style.boxShadow = `0 0 ${glowIntensity}px #c00`;
+  } else {
+    degEl.style.boxShadow = 'none';
+  }
+}
+
+const ENEMY_ART = {
+  'starved husk':
+`  ,. .,
+ ( o,o )
+ |)   (|
+--"-"-"--`,
+  'drip maw':
+` _/\\_
+(q  p)
+ \\vv/
+ /||\\ `,
+  'thin crawler':
+`  |  |
+-(+)-
+  |  |
+ / \\ `,
+  'bone picker':
+` ,^,
+(x x)
+/|||\\
+ | | `,
+  'shroud fragment':
+`~~~,~~~
+(  ?  )
+~~~~~~~
+ \\ | / `,
+  'mimic shell':
+` [___]
+ |o o|
+ [___]
+  |||  `,
+  'blur walker':
+` /????\
+( ???? )
+ \????/
+  ~~~~  `,
+  'hidden thread':
+`  ---
+ /   \\
+| . . |
+ \\___/`,
+  'bone guard':
+` /|\\
+[XXX]
+ |||
+/| |\\`,
+  'rib hound':
+` /"\\
+/---\\
+|@@@|
+\\_._/`,
+  'spine lash':
+`  ~|~
+  ~~~
+ /|||\\
+  |||  `,
+  'hollow carrier':
+`[=====]
+| _ _ |
+|_____|
+ || ||  `,
+  'blade echo':
+`  /|
+ / |
+/  |
+---+`,
+  'step cutter':
+` ,---,
+| > < |
+ \\-+-/
+  | |   `,
+  'guard disciple':
+` (###)
+ |###|
+ |###|
+/|###|\\`,
+  'misstep punisher':
+` _/\\_
+( !!! )
+ \\---/
+  |||  `,
+  'watcher fragment':
+`  (O)
+ / | \\
+(  |  )
+ \\_|_/ `,
+  'blind seeker':
+` X   X
+  \\ /
+   ?
+  / \\  `,
+  'pulse warden':
+` {~~~}
+{~!!!~}
+ {~~~}
+  |_|   `,
+  'quiet stalker':
+`  ...
+ (   )
+  ...  `,
+  'tonberry':
+`  ,_.
+ (T_T)
+  |*|
+ / V \\  `,
+  'laughing split':
+` hahaha
+(>    <)
+ \\haha/
+  haha  `,
+  'wrong walker':
+` ?-?-?
+(?   ?)
+ ?-?-?
+  ???   `,
+  'joy mask':
+` :---:
+(:  :)
+ :---:
+  |||   `,
+  'end fragment':
+`  %%%
+ %%%%%
+  %%%
+ %%%%%  `,
+  'bahamut':
+`/=====\\
+|D R A G|
+|  O N  |
+\\=====/  `,
+  'plague rat king':
+`  /\\  /\\
+ (o  \\/  o)
+  \\  /\\  /
+   \\/  \\/  `,
+  'sir rustblade':
+` [RUST]
+ |>--|
+ |>--|
+  |||    `,
+  'crowfather elric':
+`  _/\\_
+ (crow)
+ /|V|\\
+  crow  `,
+  'blant the bladesman':
+`  /|/|
+ /-|-|
+ \\-|-|
+  \\|\\|  `,
+  'ribcage matron':
+`/|\\|/|\\
+| ribs |
+\\|/|\\|/
+  |||    `,
+  'iron maiden':
+`[|||||]
+[| . |]
+[|_._|]
+[|||||]  `
+};
+
+function updateEnemyUI() {
+  const e = state.enemy;
+  document.getElementById('enemy-name-display').textContent = e.name;
+  document.getElementById('enemy-hp-bar').style.width = Math.max(0, (e.hp / e.maxHp) * 100) + '%';
+  document.getElementById('enemy-hp-label').textContent = `${Math.max(0,Math.floor(e.hp))} / ${e.maxHp}`;
+  const art = ENEMY_ART[e.name] || `  ???\n ( ? )\n  ???`;
+  document.getElementById('enemy-art').textContent = art;
+}
+
+function logMsg(msg, type = '') {
+  const log = document.getElementById('battle-log');
+  const p = document.createElement('p');
+  p.className = type;
+  p.textContent = msg;
+  log.appendChild(p);
+  log.scrollTop = log.scrollHeight;
+}
+
+function setActionsEnabled(val) {
+  ['btn-attack','btn-cleanse','btn-slip','btn-break'].forEach(id => {
+    document.getElementById(id).disabled = !val;
+  });
+  document.getElementById('footer-skill').style.opacity = val ? '1' : '0.4';
+}
+
+function playerAction(action) {
+  if (!state.playerTurn || !state.inBattle) return;
+  setActionsEnabled(false);
+
+  const p = state.player;
+  const e = state.enemy;
+  let dmg = 0;
+  let degGain = 0;
+  let dodged = false;
+  let selfhit = false;
+
+  const deg = state.degradation;
+  const chaosRoll = Math.random() * 100;
+  if (deg >= 80 && chaosRoll < 35) {
+
+    logMsg('your grip slips. you lose yourself for a moment.', 'bad');
+    state.degradation = Math.min(100, state.degradation + 3);
+    updateHUD();
+    if (state.degradation >= 100) { triggerGameOver(); return; }
+    setTimeout(() => enemyTurn(), 700);
+    return;
+  }
+
+  switch(action) {
+    case 'attack': {
+      SFX.attack();
+      dmg = calcPlayerDmg(p.atk);
+      degGain = 12;
+      e.hp -= dmg;
+      logMsg(`you strike. ${dmg} damage.`, 'dmg');
+      shakeEnemy();
+      break;
+    }
+    case 'slip': {
+      SFX.slip();
+      const dodgeChance = 0.45;
+      dodged = Math.random() < dodgeChance;
+      if (dodged) {
+        const clr = Math.floor(10 + Math.random() * 8);
+        state.degradation = Math.max(0, state.degradation - clr);
+        degGain = 0;
+        logMsg(`you slip away. the attack misses. degradation -${clr}.`, 'good');
+      } else {
+        const clr = Math.floor(3 + Math.random() * 4);
+        state.degradation = Math.max(0, state.degradation - clr);
+        degGain = 0;
+        logMsg(`you stumble. the slip fails. degradation -${clr}.`, 'bad');
+      }
+      break;
+    }
+    case 'cleanse': {
+      SFX.cleanse();
+      const clr = Math.floor(26 + Math.random() * 16);
+      state.degradation = Math.max(0, state.degradation - clr);
+      degGain = 0;
+      logMsg(`you breathe through it. degradation -${clr}.`, 'good');
+      break;
+    }
+    case 'break': {
+      SFX.heavy();
+      dmg = calcPlayerDmg(p.atk * 1.9);
+      degGain = 22;
+      e.hp -= dmg;
+      logMsg(`you crash through. ${dmg} heavy damage.`, 'dmg');
+      shakeEnemy();
+      break;
+    }
+  }
+
+  state.degradation = Math.min(100, state.degradation + degGain);
+  if (state.degradation >= 100) { triggerGameOver(); return; }
+
+  updateHUD();
+  updateEnemyUI();
+
+  if (e.hp <= 0) {
+    setTimeout(() => enemyDefeated(), 400);
+    return;
+  }
+
+  state.playerTurn = false;
+  setTimeout(() => {
+    if (dodged) {
+      logMsg('the enemy lunges — and finds only air.', 'sys');
+      setTimeout(() => endEnemyTurn(), 500);
+    } else {
+      enemyTurn();
+    }
+  }, 500);
+}
+
+function calcPlayerDmg(base) {
+  const deg = state.degradation;
+  let mult = 1.25;
+  if (deg >= 70) mult = 1.75;
+  else if (deg >= 50) mult = 1.5;
+  const raw = base * mult * (0.85 + Math.random() * 0.3);
+  return Math.floor(raw);
+}
+
+function useClassSkill() {
+  if (!state.playerTurn || !state.inBattle) return;
+  SFX.skill();
+  const cls = state.chosenClass;
+  const classData = CLASSES[cls];
+  const p = state.player;
+  if (p.sp < classData.skillCost) { logMsg('not enough sp.', 'sys'); return; }
+
+  p.sp -= classData.skillCost;
+  setActionsEnabled(false);
+
+  switch(cls) {
+    case 'knight': {
+      state.bulwark = true;
+      logMsg('iron bulwark raised. next hit reduced.', 'good');
+      updateHUD();
+      setTimeout(() => enemyTurn(), 600);
+      break;
+    }
+    case 'trickster': {
+      const deg = state.degradation;
+      let dmg;
+      if (deg >= 50) {
+        dmg = calcPlayerDmg(state.player.atk * 2.5);
+        logMsg(`last laugh — chaos fuels you. ${dmg} damage.`, 'dmg');
+      } else {
+        dmg = calcPlayerDmg(state.player.atk);
+        logMsg(`last laugh — nothing special yet. ${dmg} damage.`, 'dmg');
+      }
+      state.enemy.hp -= dmg;
+      shakeEnemy();
+      state.degradation = Math.min(100, state.degradation + 14);
+      updateHUD();
+      updateEnemyUI();
+      if (state.enemy.hp <= 0) { setTimeout(() => enemyDefeated(), 400); return; }
+      setTimeout(() => enemyTurn(), 600);
+      break;
+    }
+    case 'bard': {
+      state.dirgeturns = 2;
+      logMsg('dirge sung. enemy weakened for 2 turns.', 'good');
+      updateHUD();
+      setTimeout(() => enemyTurn(), 600);
+      break;
+    }
+  }
+
+  state.playerTurn = false;
+  updateHUD();
+}
+
+function enemyTurn() {
+  const e = state.enemy;
+  const p = state.player;
+
+  let atkMult = 1;
+  if (state.dirgeturns > 0) {
+    atkMult = 0.7;
+    state.dirgeturns--;
+    logMsg(`the dirge lingers. enemy weakened.`, 'good');
+  }
+
+  let dmg = Math.floor(e.atk * atkMult * (0.8 + Math.random() * 0.4));
+
+  if (state.bulwark) {
+    dmg = Math.floor(dmg * 0.5);
+    state.bulwark = false;
+    logMsg(`${e.name} strikes. bulwark holds. ${dmg} damage.`, 'bad');
+  } else {
+    logMsg(`${e.name} strikes you for ${dmg}.`, 'bad');
+  }
+
+  p.hp -= dmg;
+  flashHit();
+  updateHUD();
+
+  if (p.hp <= 0) {
+    setTimeout(() => triggerGameOver(), 500);
+    return;
+  }
+
+  setTimeout(() => endEnemyTurn(), 500);
+}
+
+function endEnemyTurn() {
+  state.playerTurn = true;
+
+  if (Math.random() < 0.5) {
+    const p = state.player;
+    if (p.sp < p.spMax) {
+      p.sp = Math.min(p.spMax, p.sp + 1);
+      logMsg('your focus returns. +1 sp.', 'sys');
+    }
+  }
+  updateHUD();
+  setActionsEnabled(true);
+}
+
+function shakeEnemy() {
+  const el = document.getElementById('enemy-name-display');
+  el.classList.remove('shake');
+  void el.offsetWidth;
+  el.classList.add('shake');
+  setTimeout(() => el.classList.remove('shake'), 400);
+}
+
+function flashHit() {
+  SFX.hit();
+  const el = document.getElementById('battle-left');
+  el.classList.remove('hit');
+  void el.offsetWidth;
+  el.classList.add('hit');
+  setTimeout(() => el.classList.remove('hit'), 2000);
+}
+
+function enemyDefeated() {
+  state.inBattle = false;
+  SFX.victory();
+  if (state._fromDungeon) {
+    setTimeout(() => returnToDungeonAfterBattle(true), 400);
+    return;
+  }
+  const isBoss = state.currentStage === 4;
+  const lv = LEVELS[state.currentLevel];
+
+  if (isBoss) {
+    if (lv.boss.reward === 'end') {
+      showEndScreen();
+      return;
+    }
+
+    state.currentStage = 0;
+    const wasLevel = state.currentLevel;
+    state.currentLevel++;
+    if (state.currentLevel > state.unlockedLevels - 1) {
+      state.unlockedLevels = state.currentLevel + 1;
+    }
+
+    const p = state.player;
+    p.hp = Math.min(p.maxHp, p.hp + Math.floor(p.maxHp * 0.6));
+    p.sp = p.spMax;
+    p.maxHp = Math.floor(p.maxHp * 1.08);
+    p.atk = Math.floor(p.atk * 1.06);
+
+    document.getElementById('clear-title').textContent = `${lv.name} — cleared`;
+    document.getElementById('clear-sub').textContent = lv.boss.reward;
+    document.getElementById('clear-stats').textContent = `hp restored. strength grows.\nnext: level ${state.currentLevel + 1}`;
+    showScreen('clear-screen');
+  } else {
+
+    state.currentStage++;
+    const nextName = state.currentStage === 4 ? LEVELS[state.currentLevel].boss.name : LEVELS[state.currentLevel].enemies[state.currentStage];
+    document.getElementById('clear-title').textContent = 'stage cleared';
+    document.getElementById('clear-sub').textContent = `the ${state.enemy.name} falls silent.`;
+    document.getElementById('clear-stats').textContent = `next: ${nextName}`;
+
+    const p = state.player;
+    p.hp = Math.min(p.maxHp, p.hp + 12);
+    showScreen('clear-screen');
+  }
+}
+
+function continueFromClear() {
+  SFX.click();
+  if (state.currentLevel >= LEVELS.length) {
+    showEndScreen();
+    return;
+  }
+  startStage();
+}
+
+function triggerGameOver() {
+  state.inBattle = false;
+  if (state._fromDungeon) {
+    dungeon.player = state.player;
+    SFX.death();
+    dungeonDeath();
+    return;
+  }
+  SFX.death();
+  if (state.player) {
+    state.player.hp = state.player.maxHp;
+    state.player.sp = state.player.spMax;
+  }
+  const fhEl = document.getElementById('go-fh-display');
+  if (fhEl) {
+    const total = (state.totalFH || 0) + (dungeon.fH || 0);
+    fhEl.textContent = total > 0 ? `fH collected this run: ${total}` : '';
+  }
+  showScreen('gameover-screen');
+}
+
+function retryFromDeath() {
+  SFX.click();
+  // Restore gameover screen defaults in case they were changed by dungeonDeath
+  const goSub = document.querySelector('#gameover-screen .go-sub');
+  if (goSub) goSub.textContent = 'a black warp swallowed you.';
+  const retryBtn = document.querySelector('#gameover-screen .btn');
+  if (retryBtn) { retryBtn.textContent = 'return to map'; retryBtn.onclick = retryFromDeath; }
+  showMap();
+}
+
+function restartGame() {
+  dungeon = { grid:[], playerX:1, playerY:1, player:null, fH:0, hasKey:false,
+    enemiesBeaten:0, degradation:0, interactable:null, pendingBattle:null,
+    active:false, stepCount:0, revealedCells:new Set(), objects:[],
+    floor:1, bossDefeated:false, ironMaidenSeen:false };
+  state = {
+    chosenClass: null,
+    player: null,
+    enemy: null,
+    currentLevel: 0,
+    currentStage: 0,
+    unlockedLevels: 1,
+    degradation: 0,
+    bulwark: false,
+    dirgeturns: 0,
+    skillUsedThisBattle: false,
+    playerTurn: true,
+    inBattle: false
+  };
+  selectedClass = null;
+  document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('confirm-class-btn').disabled = true;
+  showScreen('title-screen');
+}
+
+function showEndScreen() {
+  state.inBattle = false;
+  document.getElementById('end-text').innerHTML =
+    `you defeat the iron maiden.<br><br>` +
+    `you ask who she is.<br><br>` +
+    `she just smiles at you again, like she already knows.<br><br>` +
+    `then you start fading away slowly,<br>like you're being erased.<br><br>` +
+    `she stays still. watching you disappear.<br><br>` +
+    `that same smile never leaves her face.<br>` +
+    `even when you're almost gone.`;
+  showScreen('end-screen');
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// DUNGEON CRAWL ENGINE
+// ═══════════════════════════════════════════════════════════════════
+
+const DUNGEON_TILE = {
+  WALL:   0,
+  FLOOR:  1,
+  ENEMY:  2,
+  CHEST:  3,
+  LOOT:   4,
+  GATE:   5,
+  KEY:    6,
+  START:  7,
+  BOSS:   8,
+  VISITED:9
+};
+
+const DUNGEON_W = 35;
+const DUNGEON_H = 35;
+
+let dungeon = {
+  grid: [],
+  playerX: 1,
+  playerY: 1,
+  player: null,
+  fH: 0,
+  hasKey: false,
+  enemiesBeaten: 0,
+  degradation: 0,
+  interactable: null,
+  pendingBattle: null,
+  active: false,
+  stepCount: 0,
+  revealedCells: new Set(),
+  objects: [],
+  floor: 1,
+  bossDefeated: false,
+  ironMaidenSeen: false,
+};
+
+// ── SFX additions for dungeon ───────────────────────────────────
+Object.assign(SFX, {
+  step:    () => _beep({ freq: 80,  type: 'square',   vol: 0.05, dur: 0.04 }),
+  chest:   () => { _beep({ freq: 440, type: 'sine', vol: 0.14, dur: 0.10 });
+                   setTimeout(() => _beep({ freq: 660, type: 'sine', vol: 0.12, dur: 0.14 }), 100); },
+  key:     () => { [520,640,780].forEach((f,i) => setTimeout(() => _beep({ freq: f, type: 'sine', vol: 0.16, dur: 0.12 }), i * 80)); },
+  gate:    () => _beep({ freq: 120, type: 'sawtooth', vol: 0.22, dur: 0.30, freqEnd: 60 }),
+  encounter: () => { _beep({ freq: 220, type: 'sawtooth', vol: 0.18, dur: 0.12 });
+                     setTimeout(() => _beep({ freq: 180, type: 'sawtooth', vol: 0.16, dur: 0.15 }), 120); },
+  loot:    () => _beep({ freq: 380, type: 'sine', vol: 0.14, dur: 0.13, freqEnd: 500 }),
+  wall:    () => _beep({ freq: 60,  type: 'square',   vol: 0.07, dur: 0.05 }),
+  dungeonWin: () => { [300,360,430,520,640].forEach((f,i) =>
+                   setTimeout(() => _beep({ freq: f, type: 'sine', vol: 0.16, dur: 0.14 }), i * 100)); }
+});
+
+// ── Dungeon Map Generator ───────────────────────────────────────
+// Boss definitions per floor
+const DUNGEON_BOSSES = {
+  2: { name: 'old gatekeeper',    hp: 320, atk: 38 },
+  3: { name: 'lord of empty halls', hp: 480, atk: 52 },
+  4: { name: 's.fade',            hp: 640, atk: 68 },
+};
+
+function generateDungeon(floor = 1) {
+  const grid = Array.from({ length: DUNGEON_H }, () => Array(DUNGEON_W).fill(DUNGEON_TILE.WALL));
+  const objects = [];
+
+  // Recursive backtracking maze
+  function carve(x, y) {
+    const dirs = [[0,-2],[2,0],[0,2],[-2,0]].sort(() => Math.random() - 0.5);
+    for (const [dx, dy] of dirs) {
+      const nx = x + dx, ny = y + dy;
+      if (nx > 0 && ny > 0 && nx < DUNGEON_W-1 && ny < DUNGEON_H-1 && grid[ny][nx] === DUNGEON_TILE.WALL) {
+        grid[y + dy/2][x + dx/2] = DUNGEON_TILE.FLOOR;
+        grid[ny][nx] = DUNGEON_TILE.FLOOR;
+        carve(nx, ny);
+      }
+    }
+  }
+  grid[1][1] = DUNGEON_TILE.FLOOR;
+  carve(1, 1);
+
+  // Widen corridors
+  for (let y = 1; y < DUNGEON_H - 1; y++) {
+    for (let x = 1; x < DUNGEON_W - 1; x++) {
+      if (grid[y][x] === DUNGEON_TILE.FLOOR && Math.random() < 0.22) {
+        const dirs = [[0,1],[1,0],[0,-1],[-1,0]];
+        const d = dirs[Math.floor(Math.random() * 4)];
+        const nx = x + d[0], ny = y + d[1];
+        if (nx > 0 && ny > 0 && nx < DUNGEON_W-1 && ny < DUNGEON_H-1)
+          grid[ny][nx] = DUNGEON_TILE.FLOOR;
+      }
+    }
+  }
+
+  // Collect all floor tiles except start corner
+  const floors = [];
+  for (let y = 1; y < DUNGEON_H - 1; y++)
+    for (let x = 1; x < DUNGEON_W - 1; x++)
+      if (grid[y][x] === DUNGEON_TILE.FLOOR && !(x <= 2 && y <= 2))
+        floors.push([x, y]);
+
+  function placeObj(type, count, meta) {
+    for (let i = 0; i < count && floors.length; i++) {
+      const idx = Math.floor(Math.random() * floors.length);
+      const [x, y] = floors.splice(idx, 1)[0];
+      objects.push({ type, x, y, collected: false, ...(meta||{}) });
+    }
+  }
+
+  placeObj('enemy',  12 + floor * 2);
+  placeObj('chest',   5);
+  placeObj('loot',    8 + floor);
+  placeObj('key',     1);
+
+  // Boss room on floors 2-4: carve a 5x5 sealed room at far corner
+  if (floor >= 2 && DUNGEON_BOSSES[floor]) {
+    const bx = DUNGEON_W - 7, by = DUNGEON_H - 7;
+    // carve the room
+    for (let ry = by; ry < by + 5; ry++)
+      for (let rx = bx; rx < bx + 5; rx++)
+        grid[ry][rx] = DUNGEON_TILE.FLOOR;
+    // corridor from main maze into room
+    for (let rx = bx - 2; rx < bx; rx++) grid[by + 2][rx] = DUNGEON_TILE.FLOOR;
+    for (let ry = by - 2; ry < by; ry++) grid[ry][bx + 2] = DUNGEON_TILE.FLOOR;
+    // place boss in center of room
+    const boss = DUNGEON_BOSSES[floor];
+    objects.push({ type: 'boss', x: bx + 2, y: by + 2, collected: false,
+      name: boss.name, hp: boss.hp, maxHp: boss.hp, atk: boss.atk });
+    // gate is inside the boss room (far corner)
+    objects.push({ type: 'gate', x: bx + 4, y: by + 4, collected: false });
+    // remove any existing objects that landed in the boss room
+    for (let i = objects.length - 3; i >= 0; i--) {
+      const o = objects[i];
+      if (o.x >= bx && o.x < bx+5 && o.y >= by && o.y < by+5) objects.splice(i, 1);
+    }
+  } else {
+    // Floor 1: gate at a far floor tile
+    let gatePos = floors[0] || [DUNGEON_W-2, DUNGEON_H-2];
+    for (const [x, y] of floors) {
+      if (x + y > gatePos[0] + gatePos[1]) gatePos = [x, y];
+    }
+    objects.push({ type: 'gate', x: gatePos[0], y: gatePos[1], collected: false });
+  }
+
+  // Iron Maiden on floor 4 — random walkable tile near center
+  if (floor === 4) {
+    const midFloors = floors.filter(([x,y]) => Math.abs(x-17)<8 && Math.abs(y-17)<8);
+    if (midFloors.length) {
+      const idx = Math.floor(Math.random() * midFloors.length);
+      const [ix, iy] = midFloors.splice(idx, 1)[0];
+      objects.push({ type: 'ironmaiden', x: ix, y: iy, collected: false });
+    }
+  }
+
+  grid[1][1] = DUNGEON_TILE.FLOOR;
+  return { grid, objects };
+}
+
+// ── Dungeon Renderer ─────────────────────────────────────────────
+const CELL = 14; // tile size in px
+const VIEW_RADIUS = 7; // fog of war radius
+
+function renderDungeon() {
+  // ── Two-color palette: pure black + bright white ──
+  const C_BG      = '#000000';   // void / unexplored
+  const C_WALL    = '#0d0d0d';   // wall fill (near-black)
+  const C_WALLEDGE= '#1e1e1e';   // wall border
+  const C_FLOOR   = '#ffffff';   // lit floor: bright white
+  const C_FLOOR_DIM = '#888888'; // seen but not in view
+  const C_GRID    = 'rgba(0,0,0,0.35)'; // grid lines on floor
+  const C_ACCENT  = '#ffffff';   // all objects: white
+  const C_SHADOW  = '#000000';   // object shadow/bg
+
+  const canvas = document.getElementById('dungeon-canvas');
+  const area = canvas.parentElement;
+  canvas.width = area.clientWidth;
+  canvas.height = area.clientHeight;
+  const ctx = canvas.getContext('2d');
+
+  const pw = canvas.width, ph = canvas.height;
+  const cx = Math.floor(pw / 2), cy = Math.floor(ph / 2);
+  const px = dungeon.playerX, py = dungeon.playerY;
+
+  ctx.fillStyle = C_BG;
+  ctx.fillRect(0, 0, pw, ph);
+
+  const startCol = Math.floor(px - pw / (2 * CELL));
+  const endCol   = Math.ceil (px + pw / (2 * CELL));
+  const startRow = Math.floor(py - ph / (2 * CELL));
+  const endRow   = Math.ceil (py + ph / (2 * CELL));
+
+  // draw tiles
+  for (let y = startRow; y <= endRow; y++) {
+    for (let x = startCol; x <= endCol; x++) {
+      if (y < 0 || y >= DUNGEON_H || x < 0 || x >= DUNGEON_W) continue;
+      const key = y * DUNGEON_W + x;
+      const inView = Math.abs(x - px) <= VIEW_RADIUS && Math.abs(y - py) <= VIEW_RADIUS;
+      if (inView) dungeon.revealedCells.add(key);
+      const revealed = dungeon.revealedCells.has(key);
+      if (!revealed) continue;
+
+      const tile = dungeon.grid[y][x];
+      const sx = cx + (x - px) * CELL;
+      const sy = cy + (y - py) * CELL;
+      const dist = Math.max(Math.abs(x - px), Math.abs(y - py));
+
+      if (tile === DUNGEON_TILE.WALL) {
+        if (inView) {
+          ctx.fillStyle = C_WALL;
+          ctx.fillRect(sx, sy, CELL, CELL);
+          ctx.strokeStyle = C_WALLEDGE;
+          ctx.lineWidth = 0.5;
+          ctx.strokeRect(sx + 0.5, sy + 0.5, CELL - 1, CELL - 1);
+        }
+        // walls in fog stay black (no draw)
+      } else {
+        // floor — bright white in view, dim grey when seen-but-not-in-view
+        if (inView) {
+          const brightness = Math.max(0.45, 1 - dist / (VIEW_RADIUS + 1));
+          const v = Math.round(brightness * 255);
+          ctx.fillStyle = `rgb(${v},${v},${v})`;
+          ctx.fillRect(sx, sy, CELL, CELL);
+          ctx.strokeStyle = C_GRID;
+          ctx.lineWidth = 0.5;
+          ctx.strokeRect(sx + 0.5, sy + 0.5, CELL - 1, CELL - 1);
+        } else {
+          ctx.fillStyle = '#222222';
+          ctx.fillRect(sx, sy, CELL, CELL);
+        }
+      }
+    }
+  }
+
+  // draw objects — all rendered in white/black only
+  for (const obj of dungeon.objects) {
+    if (obj.collected) continue;
+    const key = obj.y * DUNGEON_W + obj.x;
+    const inView = Math.abs(obj.x - px) <= VIEW_RADIUS && Math.abs(obj.y - py) <= VIEW_RADIUS;
+    if (!dungeon.revealedCells.has(key) && !inView) continue;
+
+    const sx = cx + (obj.x - px) * CELL;
+    const sy = cy + (obj.y - py) * CELL;
+    const alpha = inView ? 1 : 0.4;
+    const t = Date.now() / 600;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    if (obj.type === 'gate') {
+      // Gate: thick white border box, solid black center, arrow or lock glyph
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(sx + 2, sy + 2, CELL - 4, CELL - 4);
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(sx + 3, sy + 3, CELL - 6, CELL - 6);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `bold ${Math.round(CELL * 0.55)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(dungeon.hasKey ? '>' : '#', sx + CELL/2, sy + CELL/2 + 1);
+    } else if (obj.type === 'key') {
+      // Key: pulsing bright white diamond
+      const pulse = 0.7 + 0.3 * Math.sin(t * 2);
+      ctx.globalAlpha = alpha * pulse;
+      ctx.fillStyle = '#ffffff';
+      // diamond shape
+      const cx2 = sx + CELL/2, cy2 = sy + CELL/2;
+      const r = CELL * 0.38;
+      ctx.beginPath();
+      ctx.moveTo(cx2, cy2 - r);
+      ctx.lineTo(cx2 + r, cy2);
+      ctx.lineTo(cx2, cy2 + r);
+      ctx.lineTo(cx2 - r, cy2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#000';
+      ctx.font = `${Math.round(CELL * 0.4)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('K', cx2, cy2 + 1);
+    } else if (obj.type === 'chest') {
+      // Chest: white outline rectangle, C inside
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(sx + 2, sy + 3, CELL - 4, CELL - 6);
+      // lid line
+      ctx.beginPath();
+      ctx.moveTo(sx + 2, sy + Math.round(CELL * 0.42));
+      ctx.lineTo(sx + CELL - 2, sy + Math.round(CELL * 0.42));
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `${Math.round(CELL * 0.38)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('C', sx + CELL/2, sy + CELL/2 + 1);
+    } else if (obj.type === 'enemy') {
+      // Enemy: white X on black tile
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(sx + 1, sy + 1, CELL - 2, CELL - 2);
+      ctx.fillStyle = '#000000';
+      ctx.font = `bold ${Math.round(CELL * 0.65)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('X', sx + CELL/2, sy + CELL/2 + 1);
+    } else if (obj.type === 'loot') {
+      // Loot: small white dot with crosshair ticks
+      const cx2 = sx + CELL/2, cy2 = sy + CELL/2;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(cx2 - 4, cy2); ctx.lineTo(cx2 + 4, cy2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx2, cy2 - 4); ctx.lineTo(cx2, cy2 + 4); ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(cx2, cy2, 2, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (obj.type === 'boss') {
+      // Boss: flashing filled square with B
+      const bpulse = 0.6 + 0.4 * Math.abs(Math.sin(Date.now()/300));
+      ctx.globalAlpha = alpha * bpulse;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(sx + 1, sy + 1, CELL - 2, CELL - 2);
+      ctx.fillStyle = '#000000';
+      ctx.font = `bold ${Math.round(CELL * 0.65)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('!', sx + CELL/2, sy + CELL/2 + 1);
+      ctx.globalAlpha = alpha;
+    } else if (obj.type === 'ironmaiden') {
+      // Iron Maiden: white outline circle, IM inside
+      const impulse = 0.7 + 0.3 * Math.sin(Date.now()/700);
+      ctx.globalAlpha = alpha * impulse;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(sx + CELL/2, sy + CELL/2, CELL/2 - 2, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `${Math.round(CELL*0.4)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('?', sx + CELL/2, sy + CELL/2 + 1);
+      ctx.globalAlpha = alpha;
+    }
+    ctx.restore();
+  }
+
+  // draw player cursor — small crosshair diamond, not a triangle
+  const t2 = Date.now() / 500;
+  const pulse2 = 0.85 + 0.15 * Math.sin(t2);
+  const cx3 = cx + CELL/2, cy3 = cy + CELL/2;
+  const r = Math.round(CELL * 0.32);
+
+  ctx.save();
+  ctx.globalAlpha = pulse2;
+
+  // outer glow
+  ctx.shadowColor = '#ffffff';
+  ctx.shadowBlur = 6;
+
+  // diamond outline
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(cx3,     cy3 - r);
+  ctx.lineTo(cx3 + r, cy3);
+  ctx.lineTo(cx3,     cy3 + r);
+  ctx.lineTo(cx3 - r, cy3);
+  ctx.closePath();
+  ctx.stroke();
+
+  // crosshair ticks outside diamond
+  ctx.lineWidth = 1;
+  const arm = r + 3;
+  ctx.beginPath(); ctx.moveTo(cx3, cy3 - arm); ctx.lineTo(cx3, cy3 - arm - 3); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx3, cy3 + arm); ctx.lineTo(cx3, cy3 + arm + 3); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx3 - arm, cy3); ctx.lineTo(cx3 - arm - 3, cy3); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx3 + arm, cy3); ctx.lineTo(cx3 + arm + 3, cy3); ctx.stroke();
+
+  // center dot
+  ctx.fillStyle = '#ffffff';
+  ctx.shadowBlur = 0;
+  ctx.beginPath();
+  ctx.arc(cx3, cy3, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+
+  // minimap
+  drawMinimap(ctx, pw, ph);
+}
+
+function drawMinimap(ctx, pw, ph) {
+  const mmW = 88, mmH = 88;
+  const mmX = pw - mmW - 8, mmY = 8;
+  const tW = mmW / DUNGEON_W, tH = mmH / DUNGEON_H;
+
+  // background
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(mmX - 1, mmY - 1, mmW + 2, mmH + 2);
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(mmX - 1, mmY - 1, mmW + 2, mmH + 2);
+
+  for (let y = 0; y < DUNGEON_H; y++) {
+    for (let x = 0; x < DUNGEON_W; x++) {
+      const key = y * DUNGEON_W + x;
+      if (!dungeon.revealedCells.has(key)) continue;
+      const tile = dungeon.grid[y][x];
+      // two-color minimap: wall=dark grey, floor=white
+      ctx.fillStyle = tile === DUNGEON_TILE.WALL ? '#1a1a1a' : '#cccccc';
+      ctx.fillRect(mmX + x * tW, mmY + y * tH, Math.ceil(tW), Math.ceil(tH));
+    }
+  }
+
+  // objects on minimap — all white, distinguished by size
+  for (const obj of dungeon.objects) {
+    if (obj.collected) continue;
+    if (!dungeon.revealedCells.has(obj.y * DUNGEON_W + obj.x)) continue;
+    // key and gate get bright white; enemies get a medium dot
+    const sizes  = { enemy: 2, chest: 3, loot: 2, key: 3, gate: 3, boss: 4, ironmaiden: 3 };
+    const sz = sizes[obj.type] || 2;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(
+      mmX + obj.x * tW + (tW - sz) / 2,
+      mmY + obj.y * tH + (tH - sz) / 2,
+      sz, sz
+    );
+  }
+
+  // player dot — small bright square
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(mmX + dungeon.playerX * tW - 1.5, mmY + dungeon.playerY * tH - 1.5, 4, 4);
+}
+
+let _dungeonRenderFrame = null;
+function startDungeonRenderLoop() {
+  function loop() {
+    if (dungeon.active) {
+      renderDungeon();
+      _dungeonRenderFrame = requestAnimationFrame(loop);
+    }
+  }
+  if (_dungeonRenderFrame) cancelAnimationFrame(_dungeonRenderFrame);
+  _dungeonRenderFrame = requestAnimationFrame(loop);
+}
+
+// ── dungeon UI helpers ───────────────────────────────────────────
+function dLog(msg, cls = '') {
+  const log = document.getElementById('dungeon-log');
+  const p = document.createElement('p');
+  if (cls) p.className = cls;
+  p.textContent = msg;
+  log.appendChild(p);
+  log.scrollTop = log.scrollHeight;
+}
+
+function updateDungeonHUD() {
+  const p = dungeon.player;
+  if (!p) return;
+  document.getElementById('d-hp-bar').style.width = Math.max(0,(p.hp/p.maxHp)*100)+'%';
+  document.getElementById('d-hp-val').textContent = `${Math.max(0,Math.floor(p.hp))}/${p.maxHp}`;
+  document.getElementById('d-sp-bar').style.width = (p.sp/p.spMax)*100+'%';
+  document.getElementById('d-sp-val').textContent = `${p.sp}/${p.spMax}`;
+  document.getElementById('d-stat-hp').style.width = Math.max(0,(p.hp/p.maxHp)*100)+'%';
+  document.getElementById('d-stat-hp-v').textContent = `${Math.max(0,Math.floor(p.hp))}/${p.maxHp}`;
+  document.getElementById('d-stat-sp').style.width = (p.sp/p.spMax)*100+'%';
+  document.getElementById('d-stat-sp-v').textContent = `${p.sp}/${p.spMax}`;
+  document.getElementById('d-hud-level').textContent = state.currentLevel + 1;
+  document.getElementById('d-fh-val').textContent = dungeon.fH;
+  document.getElementById('d-pos-val').textContent = `${dungeon.playerX},${dungeon.playerY}`;
+  document.getElementById('d-footer-enemies').textContent = `enemies beaten: ${dungeon.enemiesBeaten}`;
+
+  const ki = document.getElementById('d-key-indicator');
+  ki.textContent = dungeon.hasKey ? '🗝 key found' : '🗝 no key';
+  ki.className = 'dungeon-key-indicator' + (dungeon.hasKey ? ' has-key' : '');
+
+  // deg meter
+  const deg = dungeon.degradation;
+  document.getElementById('d-deg-fill').style.width = deg + '%';
+  document.getElementById('d-deg-val').textContent = `${Math.floor(deg)}/100`;
+  const t = Math.max(0, Math.min(1, deg/100));
+  let r,g,b;
+  if (t < 0.3) { const s=t/0.3; r=255; g=Math.round(255-s*111); b=Math.round(255-s*111); }
+  else if (t < 0.55) { const s=(t-0.3)/0.25; r=255; g=Math.round(144-s*93); b=Math.round(144-s*144); }
+  else if (t < 0.8) { const s=(t-0.55)/0.25; r=255; g=Math.round(51-s*51); b=0; }
+  else { const s=(t-0.8)/0.2; r=Math.round(255-s*148); g=0; b=0; }
+  document.getElementById('d-deg-fill').style.background = `rgb(${r},${g},${b})`;
+  const da = document.getElementById('d-deg-alert');
+  if (deg >= 60) da.classList.add('visible'); else da.classList.remove('visible');
+}
+
+function setDungeonInteractHint(label) {
+  const btn = document.getElementById('d-interact-btn');
+  if (!btn) return;
+  if (label) {
+    btn.textContent = label;
+    btn.disabled = false;
+    btn.style.pointerEvents = 'auto';
+    btn.style.opacity = '1';
+    btn.style.borderColor = '#fff';
+    btn.style.color = '#fff';
+  } else {
+    btn.textContent = '[ interact ]';
+    btn.disabled = true;
+    btn.style.pointerEvents = 'none';
+    btn.style.opacity = '0.35';
+    btn.style.borderColor = '#333';
+    btn.style.color = '#444';
+  }
+}
+
+// ── overlay ──────────────────────────────────────────────────────
+function showDungeonOverlay(title, sub, buttons) {
+  const ov = document.getElementById('dungeon-overlay');
+  document.getElementById('dov-title').textContent = title;
+  document.getElementById('dov-sub').textContent = sub;
+  const btns = document.getElementById('dov-btns');
+  btns.innerHTML = '';
+  for (const b of buttons) {
+    const el = document.createElement('button');
+    el.className = 'btn';
+    el.textContent = b.label;
+    el.onclick = b.fn;
+    btns.appendChild(el);
+  }
+  ov.classList.add('active');
+}
+function hideDungeonOverlay() {
+  document.getElementById('dungeon-overlay').classList.remove('active');
+}
+
+// ── open dungeon ─────────────────────────────────────────────────
+function openDungeon() {
+  SFX.confirm();
+  // init dungeon player from battle player (or class defaults)
+  const cls = CLASSES[state.chosenClass];
+  if (!dungeon.player || !dungeon.player.maxHp) {
+    dungeon.player = {
+      hp: state.player ? state.player.hp : cls.hp,
+      maxHp: state.player ? state.player.maxHp : cls.hp,
+      sp: state.player ? state.player.sp : cls.sp,
+      spMax: state.player ? state.player.spMax : cls.spMax,
+      atk: state.player ? state.player.atk : cls.atk,
+      def: state.player ? state.player.def : cls.def,
+    };
+  }
+  dungeon.fH = dungeon.fH || 0;
+  dungeon.hasKey = false;
+  dungeon.enemiesBeaten = 0;
+  dungeon.degradation = state.degradation || 0;
+  dungeon.active = true;
+  dungeon.revealedCells = new Set();
+  dungeon.stepCount = 0;
+  dungeon.floor = dungeon.floor || 1;
+  dungeon.bossDefeated = false;
+  dungeon.ironMaidenSeen = false;
+
+  // generate map
+  const { grid, objects } = generateDungeon(dungeon.floor);
+  dungeon.grid = grid;
+  dungeon.objects = objects;
+  dungeon.playerX = 1;
+  dungeon.playerY = 1;
+
+  // setup class art in left panel
+  const artEl = document.getElementById('d-class-art');
+  artEl.innerHTML = '';
+  const img = document.createElement('img');
+  img.src = `styles/card_${state.chosenClass}.png`;
+  img.alt = state.chosenClass;
+  img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+  img.onerror = function() {
+    this.style.display = 'none';
+    const svgWrap = document.createElement('div');
+    svgWrap.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;';
+    svgWrap.innerHTML = getCardSVG(state.chosenClass);
+    artEl.appendChild(svgWrap);
+  };
+  artEl.appendChild(img);
+  document.getElementById('d-class-label').textContent = state.chosenClass;
+
+  showScreen('dungeon-screen');
+  updateDungeonHUD();
+  const floorNames = ['','B1 \u2014 the first descent','B2 \u2014 crumbling halls','B3 \u2014 the hollow throne','B4 \u2014 s.fade\u2019s domain'];
+  dLog(`${floorNames[dungeon.floor] || 'B'+dungeon.floor} — you descend.`, 'dl-sys');
+  if (dungeon.floor === 1) dLog('find the key. reach the gate.', 'dl-sys');
+  else dLog('find the key. defeat the boss. reach the gate.', 'dl-sys');
+  document.getElementById('d-floor-val').textContent = 'B' + dungeon.floor;
+  startDungeonRenderLoop();
+  checkInteractable();
+
+  // keyboard
+  document.addEventListener('keydown', dungeonKeyHandler);
+}
+
+function exitDungeon() {
+  SFX.click();
+  dungeon.active = false;
+  if (_dungeonRenderFrame) cancelAnimationFrame(_dungeonRenderFrame);
+  document.removeEventListener('keydown', dungeonKeyHandler);
+  // save fH total to a running total
+  state.totalFH = (state.totalFH || 0);
+  showMap();
+}
+
+function dungeonKeyHandler(e) {
+  if (!dungeon.active) return;
+  if (e.code === 'ArrowUp'    || e.code === 'KeyW') { e.preventDefault(); dungeonMove('up'); }
+  if (e.code === 'ArrowDown'  || e.code === 'KeyS') { e.preventDefault(); dungeonMove('down'); }
+  if (e.code === 'ArrowLeft'  || e.code === 'KeyA') { e.preventDefault(); dungeonMove('left'); }
+  if (e.code === 'ArrowRight' || e.code === 'KeyD') { e.preventDefault(); dungeonMove('right'); }
+  if (e.code === 'Space') { e.preventDefault(); dungeonInteract(); }
+}
+
+// ── movement ─────────────────────────────────────────────────────
+let _dungeonMoveCooldown = false;
+function dungeonMove(dir) {
+  if (!dungeon.active || _dungeonMoveCooldown) return;
+  if (document.getElementById('dungeon-overlay').classList.contains('active')) return;
+
+  const dx = dir === 'left' ? -1 : dir === 'right' ? 1 : 0;
+  const dy = dir === 'up'   ? -1 : dir === 'down'  ? 1 : 0;
+  const nx = dungeon.playerX + dx;
+  const ny = dungeon.playerY + dy;
+
+  if (nx < 0 || ny < 0 || nx >= DUNGEON_W || ny >= DUNGEON_H) return;
+  if (dungeon.grid[ny][nx] === DUNGEON_TILE.WALL) { SFX.wall(); return; }
+
+  _dungeonMoveCooldown = true;
+  setTimeout(() => _dungeonMoveCooldown = false, 120);
+
+  // flash key UI
+  const keyEl = document.getElementById(`dkey-${dir === 'up' ? 'w' : dir === 'down' ? 's' : dir}`);
+  if (keyEl) { keyEl.classList.add('pressed'); setTimeout(() => keyEl.classList.remove('pressed'), 150); }
+
+  dungeon.playerX = nx;
+  dungeon.playerY = ny;
+  dungeon.stepCount++;
+  SFX.step();
+
+  // random encounter check (every ~6-12 steps on floor)
+  if (dungeon.stepCount % (6 + Math.floor(Math.random() * 6)) === 0) {
+    const roll = Math.random();
+    if (roll < 0.28) {
+      triggerRandomEncounter();
+      return;
+    }
+  }
+
+  checkInteractable();
+  updateDungeonHUD();
+}
+
+function checkInteractable() {
+  const px = dungeon.playerX, py = dungeon.playerY;
+  dungeon.interactable = null;
+
+  for (const obj of dungeon.objects) {
+    if (obj.collected) continue;
+    const dx = Math.abs(obj.x - px), dy = Math.abs(obj.y - py);
+    if (dx <= 1 && dy <= 1 && (dx + dy > 0)) {
+      dungeon.interactable = obj;
+      const hints = { enemy:'fight enemy', chest:'open chest', loot:'pick up loot', key:'take key', gate: dungeon.hasKey ? (dungeon.floor < 2 || dungeon.bossDefeated ? 'enter gate' : 'boss must die first') : 'locked — needs key', boss:'face the boss', ironmaiden:'approach her' };
+      setDungeonInteractHint(hints[obj.type] || 'interact');
+      return;
+    }
+  }
+  setDungeonInteractHint(null);
+}
+
+function dungeonInteract() {
+  if (!dungeon.interactable) return;
+  const obj = dungeon.interactable;
+  SFX.click();
+
+  if (obj.type === 'enemy') {
+    triggerDungeonBattle(obj);
+  } else if (obj.type === 'chest') {
+    openChest(obj);
+  } else if (obj.type === 'loot') {
+    pickLoot(obj);
+  } else if (obj.type === 'key') {
+    takeKey(obj);
+  } else if (obj.type === 'gate') {
+    enterGate(obj);
+  } else if (obj.type === 'boss') {
+    triggerBossBattle(obj);
+  } else if (obj.type === 'ironmaiden') {
+    triggerIronMaidenDialogue(obj);
+  }
+}
+
+// ── interactions ──────────────────────────────────────────────────
+function openChest(obj) {
+  SFX.chest();
+  obj.collected = true;
+  const fhGain = 15 + Math.floor(Math.random() * 25);
+  const hpGain = Math.floor(dungeon.player.maxHp * 0.10);
+  dungeon.fH += fhGain;
+  dungeon.player.hp = Math.min(dungeon.player.maxHp, dungeon.player.hp + hpGain);
+  dLog(`chest opened! +${fhGain} fH, +${hpGain} hp.`, 'dl-find');
+  updateDungeonHUD();
+  checkInteractable();
+}
+
+function pickLoot(obj) {
+  SFX.loot();
+  obj.collected = true;
+  const roll = Math.random();
+  if (roll < 0.45) {
+    const fhGain = 5 + Math.floor(Math.random() * 12);
+    dungeon.fH += fhGain;
+    dLog(`loot found: +${fhGain} fH.`, 'dl-find');
+  } else if (roll < 0.80) {
+    const hpGain = Math.floor(dungeon.player.maxHp * 0.08);
+    dungeon.player.hp = Math.min(dungeon.player.maxHp, dungeon.player.hp + hpGain);
+    dLog(`loot found: +${hpGain} hp restored.`, 'dl-find');
+  } else {
+    dungeon.player.sp = Math.min(dungeon.player.spMax, dungeon.player.sp + 1);
+    dLog(`loot found: +1 sp.`, 'dl-find');
+  }
+  updateDungeonHUD();
+  checkInteractable();
+}
+
+function takeKey(obj) {
+  SFX.key();
+  obj.collected = true;
+  dungeon.hasKey = true;
+  dLog('you found the key. the gate can now be opened.', 'dl-key');
+  updateDungeonHUD();
+  checkInteractable();
+}
+
+function enterGate(obj) {
+  if (!dungeon.hasKey) {
+    dLog('the gate is locked. find the key first.', 'dl-warn');
+    SFX.wall();
+    return;
+  }
+  if (dungeon.floor >= 2 && !dungeon.bossDefeated) {
+    dLog('the boss must be defeated before the gate opens.', 'dl-warn');
+    SFX.wall();
+    return;
+  }
+  SFX.gate();
+  obj.collected = true;
+  dungeon.active = false;
+  if (_dungeonRenderFrame) cancelAnimationFrame(_dungeonRenderFrame);
+  document.removeEventListener('keydown', dungeonKeyHandler);
+
+  const floorFH = dungeon.fH;
+  state.totalFH = (state.totalFH || 0) + floorFH;
+
+  if (dungeon.floor >= 4) {
+    // Final floor cleared — full win
+    SFX.dungeonWin();
+    showDungeonOverlay(
+      'the dungeon is silent.',
+      `s.fade has fallen.\nfH collected: ${state.totalFH}\nenemies beaten: ${dungeon.enemiesBeaten}`,
+      [{ label: 'return to map', fn: () => { hideDungeonOverlay(); SFX.click(); dungeon.floor = 1; showMap(); } }]
+    );
+  } else {
+    // Floor cleared — offer continue or exit
+    SFX.dungeonWin();
+    const nextFloor = dungeon.floor + 1;
+    const floorNames = { 2:'B2 \u2014 crumbling halls', 3:'B3 \u2014 the hollow throne', 4:'B4 \u2014 s.fade\u2019s domain' };
+    showDungeonOverlay(
+      `B${dungeon.floor} cleared.`,
+      `fH this floor: ${floorFH}\nenemies beaten: ${dungeon.enemiesBeaten}\n\nyou feel your strength grow.`,
+      [
+        { label: `descend to ${floorNames[nextFloor] || 'B'+nextFloor}`, fn: () => {
+          hideDungeonOverlay();
+          // buff player between floors
+          const p = dungeon.player;
+          p.hp = p.maxHp; // full heal
+          p.maxHp = Math.floor(p.maxHp * 1.10);
+          p.hp = p.maxHp;
+          p.atk = Math.floor(p.atk * 1.08);
+          p.def = Math.min(0.75, (p.def||0) + 0.03);
+          dungeon.floor = nextFloor;
+          dungeon.fH = 0;
+          openDungeon();
+        }},
+        { label: 'return to map', fn: () => { hideDungeonOverlay(); SFX.click(); dungeon.floor = 1; showMap(); } }
+      ]
+    );
+  }
+}
+
+// ── Boss battle ───────────────────────────────────────────────────
+function triggerBossBattle(obj) {
+  SFX.encounter();
+  const boss = DUNGEON_BOSSES[dungeon.floor];
+  if (!boss) return;
+  dLog(`the air thickens. ${boss.name} awakens.`, 'dl-warn');
+
+  showDungeonOverlay(
+    `⚠ boss`,
+    `${boss.name} rises from the dark.`,
+    [
+      { label: 'fight', fn: () => {
+        hideDungeonOverlay();
+        obj.collected = true;
+        dungeon._pendingBossObj = obj;
+        state.degradation = dungeon.degradation;
+        state.enemy = { name: boss.name, hp: boss.hp, maxHp: boss.hp, atk: boss.atk };
+        state.player = dungeon.player;
+        state.inBattle = true;
+        state.playerTurn = true;
+        state.bulwark = false;
+        state.dirgeturns = 0;
+        state.skillUsedThisBattle = false;
+        state._fromDungeon = true;
+        state._fromDungeonBoss = true;
+        setupBattleUI();
+        showScreen('battle-screen');
+        logMsg(`[ boss ] ${boss.name} — the dungeon shudders.`, 'sys');
+        setActionsEnabled(true);
+        dungeon.active = false;
+        if (_dungeonRenderFrame) cancelAnimationFrame(_dungeonRenderFrame);
+        document.removeEventListener('keydown', dungeonKeyHandler);
+      }},
+      { label: 'retreat', fn: () => { hideDungeonOverlay(); dLog('you back away. the air cools.', 'dl-sys'); } }
+    ]
+  );
+}
+
+// ── Iron Maiden dialogue ─────────────────────────────────────────
+const IRON_MAIDEN_DIALOGUE = [
+  { speaker: "YOU",    text: "You?!" },
+  { speaker: "HER",    text: "This place doesn't end things. It just... decays." },
+  { speaker: "YOU",    text: "What's waiting below?" },
+  { speaker: "HER",    text: "A voice." },
+  { speaker: "YOU",    text: "Whose?" },
+  { speaker: "HER",    text: "No one's. Not anymore." },
+  { speaker: "YOU",    text: "You can hear it?" },
+  { speaker: "HER",    text: "Every breath I take." },
+  { speaker: "YOU",    text: "Then why stay?" },
+  { speaker: "HER",    text: "Because it's beautiful." },
+  { speaker: "YOU",    text: "Wait!" },
+  { speaker: "ACTION", text: "A jagged, menacing smile splits her face as she vanishes into the dark." },
+];
+
+function triggerIronMaidenDialogue(obj) {
+  if (dungeon.ironMaidenSeen) {
+    dLog('the air is still. she is gone.', 'dl-sys');
+    return;
+  }
+  dungeon.active = false;
+  if (_dungeonRenderFrame) cancelAnimationFrame(_dungeonRenderFrame);
+  document.removeEventListener('keydown', dungeonKeyHandler);
+
+  let lineIdx = 0;
+  const overlay = document.getElementById('dungeon-overlay');
+  const ovTitle = document.getElementById('dov-title');
+  const ovSub = document.getElementById('dov-sub');
+  const ovBtns = document.getElementById('dov-btns');
+  overlay.classList.add('active');
+
+  function showLine() {
+    const line = IRON_MAIDEN_DIALOGUE[lineIdx];
+    ovTitle.style.cssText = 'font-size:clamp(9px,2vw,12px);color:#888;letter-spacing:0.12em;text-align:left;width:100%;max-width:340px;';
+    ovSub.style.cssText = 'font-size:clamp(11px,2.4vw,15px);color:#fff;line-height:1.6;text-align:left;width:100%;max-width:340px;min-height:40px;';
+    ovBtns.innerHTML = '';
+
+    if (line.speaker === 'ACTION') {
+      ovTitle.textContent = '';
+      ovSub.style.cssText += 'color:#888;font-style:italic;';
+      ovSub.textContent = '[' + line.text + ']';
+    } else {
+      ovTitle.textContent = line.speaker + ':';
+      ovSub.textContent = line.text;
+    }
+
+    const isLast = lineIdx >= IRON_MAIDEN_DIALOGUE.length - 1;
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.style.marginTop = '18px';
+    btn.textContent = isLast ? 'she is gone.' : '▸';
+    btn.onclick = () => {
+      if (isLast) {
+        obj.collected = true;
+        dungeon.ironMaidenSeen = true;
+        overlay.classList.remove('active');
+        // restore overlay styles
+        ovTitle.style.cssText = '';
+        ovSub.style.cssText = '';
+        dungeon.active = true;
+        startDungeonRenderLoop();
+        document.addEventListener('keydown', dungeonKeyHandler);
+        dLog('she is gone. only stillness remains.', 'dl-sys');
+      } else {
+        lineIdx++;
+        showLine();
+      }
+    };
+    ovBtns.appendChild(btn);
+  }
+  showLine();
+}
+
+// ── random encounter ─────────────────────────────────────────────
+function triggerRandomEncounter() {
+  SFX.encounter();
+  const allEnemies = Object.keys(ENEMY_STATS);
+  const pool = allEnemies.slice(0, Math.min(allEnemies.length, (state.currentLevel + 1) * 4));
+  const name = pool[Math.floor(Math.random() * pool.length)];
+  dLog(`a ${name} lurches out of the shadows!`, 'dl-enc');
+
+  showDungeonOverlay(
+    `! encounter`,
+    `a ${name} blocks your path.`,
+    [
+      { label: 'fight', fn: () => { hideDungeonOverlay(); startDungeonEncounterBattle(name); } },
+      { label: 'flee', fn: () => {
+        hideDungeonOverlay();
+        const success = Math.random() < 0.55;
+        if (success) {
+          dLog('you slip away.', 'dl-sys');
+          dungeon.degradation = Math.min(100, dungeon.degradation + 5);
+        } else {
+          dLog('you cannot escape. you take a hit.', 'dl-warn');
+          const dmg = Math.floor(8 + Math.random() * 12);
+          dungeon.player.hp -= dmg;
+          dungeon.degradation = Math.min(100, dungeon.degradation + 10);
+          if (dungeon.player.hp <= 0) { dungeonDeath(); return; }
+        }
+        updateDungeonHUD();
+      }}
+    ]
+  );
+}
+
+function triggerDungeonBattle(obj) {
+  SFX.encounter();
+  const lvEnemies = LEVELS[state.currentLevel]?.enemies || Object.keys(ENEMY_STATS).slice(0,4);
+  const name = lvEnemies[Math.floor(Math.random() * lvEnemies.length)];
+  dLog(`you approach — a ${name} rises!`, 'dl-enc');
+
+  showDungeonOverlay(
+    `enemy nearby`,
+    `a ${name} emerges.`,
+    [
+      { label: 'fight', fn: () => { hideDungeonOverlay(); obj.collected = true; startDungeonEncounterBattle(name); } },
+      { label: 'back off', fn: () => { hideDungeonOverlay(); dLog('you step back.', 'dl-sys'); } }
+    ]
+  );
+}
+
+function startDungeonEncounterBattle(enemyName) {
+  // save dungeon state into state for battle
+  dungeon.pendingBattle = enemyName;
+  state.degradation = dungeon.degradation;
+
+  // set up a mini battle using the battle screen
+  const stats = ENEMY_STATS[enemyName] || { hp: 80, atk: 14 };
+  state.enemy = { name: enemyName, hp: stats.hp, maxHp: stats.hp, atk: stats.atk };
+  state.player = dungeon.player;
+  state.inBattle = true;
+  state.playerTurn = true;
+  state.bulwark = false;
+  state.dirgeturns = 0;
+  state.skillUsedThisBattle = false;
+  state._fromDungeon = true;
+
+  setupBattleUI();
+  showScreen('battle-screen');
+  logMsg(`[ dungeon encounter ] a ${enemyName} appears.`, 'sys');
+  setActionsEnabled(true);
+  dungeon.active = false;
+  if (_dungeonRenderFrame) cancelAnimationFrame(_dungeonRenderFrame);
+  document.removeEventListener('keydown', dungeonKeyHandler);
+}
+
+function returnToDungeonAfterBattle(won) {
+  dungeon.degradation = state.degradation;
+  dungeon.player = state.player;
+  const wasBoss = state._fromDungeonBoss;
+  state._fromDungeon = false;
+  state._fromDungeonBoss = false;
+
+  if (won) {
+    dungeon.enemiesBeaten++;
+    if (wasBoss) {
+      dungeon.bossDefeated = true;
+      const boss = DUNGEON_BOSSES[dungeon.floor];
+      const fhGain = 40 + Math.floor(Math.random() * 20);
+      dungeon.fH += fhGain;
+      dLog(`${boss ? boss.name : 'boss'} defeated. the gate opens. +${fhGain} fH.`, 'dl-key');
+    } else {
+      const hpHeal = Math.floor(dungeon.player.maxHp * 0.08);
+      const fhGain = 8 + Math.floor(Math.random() * 12);
+      dungeon.player.hp = Math.min(dungeon.player.maxHp, dungeon.player.hp + hpHeal);
+      dungeon.fH += fhGain;
+      dLog(`enemy defeated. +${hpHeal} hp, +${fhGain} fH.`, 'dl-find');
+    }
+  }
+
+  dungeon.active = true;
+  showScreen('dungeon-screen');
+  updateDungeonHUD();
+  checkInteractable();
+  startDungeonRenderLoop();
+  document.addEventListener('keydown', dungeonKeyHandler);
+}
+
+function dungeonDeath() {
+  dungeon.active = false;
+  if (_dungeonRenderFrame) cancelAnimationFrame(_dungeonRenderFrame);
+  document.removeEventListener('keydown', dungeonKeyHandler);
+  state._fromDungeon = false;
+  state.inBattle = false;
+
+  const totalFH = dungeon.fH;
+  state.totalFH = (state.totalFH || 0) + totalFH;
+
+  // Show fH on the gameover screen
+  const fhEl = document.getElementById('go-fh-display');
+  if (fhEl) fhEl.textContent = `fH collected: ${totalFH}`;
+
+  // Show sub text specific to dungeon death
+  const goSub = document.querySelector('#gameover-screen .go-sub');
+  if (goSub) goSub.textContent = 'the dungeon swallowed you whole.';
+
+  // Hide "return to map" — send straight to title instead
+  const retryBtn = document.querySelector('#gameover-screen .btn');
+  if (retryBtn) {
+    retryBtn.textContent = 'title screen';
+    retryBtn.onclick = () => { SFX.click(); restartGame(); };
+  }
+
+  showScreen('gameover-screen');
+}
+
+</script>
+</body>
+</html>
