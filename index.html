@@ -1020,10 +1020,10 @@ body::after {
 
   
   <div id="title-screen" class="screen active">
-    <p class="title-story">
+   <p class="title-story">
       you wake up and there’s no sky.<br>
       just cold, crumbling walls everywhere, stretching into the dark.<br>
-      no color, no warmth. even the silence feels wrong.<br>
+      no color, no warmth.<br>
       it doesn't make sense.<br><br>
       you take a few steps and see..<br>
       A girl, standing there like she’s been waiting the whole time.<br>
@@ -1037,7 +1037,7 @@ body::after {
 
   
   <div id="class-screen" class="screen">
-    <div class="class-title">choose your echo</div>
+    <div class="class-title">choose your class</div>
     <div class="class-subtitle">once chosen, you carry it to the end</div>
     <div class="class-grid">
       
@@ -1144,7 +1144,7 @@ body::after {
 
   
   <div id="map-screen" class="screen">
-    <div class="map-title">the broken path</div>
+    <div class="map-title">Fh Map</div>
     <div class="map-sub">choose your next step</div>
     <div class="level-list" id="level-list"></div>
   </div>
@@ -2912,6 +2912,7 @@ function exitDungeon() {
 
 function dungeonKeyHandler(e) {
   if (!dungeon.active) return;
+  if (document.getElementById('dungeon-overlay').classList.contains('active')) return;
   if (e.code === 'ArrowUp'    || e.code === 'KeyW') { e.preventDefault(); dungeonMove('up'); }
   if (e.code === 'ArrowDown'  || e.code === 'KeyS') { e.preventDefault(); dungeonMove('down'); }
   if (e.code === 'ArrowLeft'  || e.code === 'KeyA') { e.preventDefault(); dungeonMove('left'); }
@@ -2977,6 +2978,7 @@ function checkInteractable() {
 
 function dungeonInteract() {
   if (!dungeon.interactable) return;
+  if (document.getElementById('dungeon-overlay').classList.contains('active')) return;
   const obj = dungeon.interactable;
   SFX.click();
 
