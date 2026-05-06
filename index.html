@@ -1021,17 +1021,17 @@ body::after {
   
   <div id="title-screen" class="screen active">
     <p class="title-story">
-      you wake up and there's no sky.<br>
-      just old stone everywhere, like some broken medieval place that forgot what it used to be.<br>
-      no color, no warmth. not even proper sound.<br>
-      it just that it feels off.<br><br>
-      you take a few steps and then you see her.<br>
-      a girl, standing ahead like she's been there the whole time.<br>
-      she smiles at you menacingly <br>
-      something's not right.<br>
-    </p>
+      you wake up and there’s no sky.<br>
+      just cold, crumbling walls everywhere, stretching into the dark.<br>
+      no color, no warmth. even the silence feels wrong.<br>
+      it doesn't make sense.<br><br>
+      you take a few steps and see..<br>
+      A girl, standing there like she’s been waiting the whole time.<br>
+      she gives you a cold, menacing smile.<br>
+      something is definitely wrong.<br>
+</p>
     <div class="title-main">ashes still sing</div>
-    <div class="title-sub">a Steel, Shadow & Melody Alternative</div>
+    <div class="title-sub">a steel, shadow & melody alternative</div>
     <button class="btn" onclick="showScreen('class-screen')">begin</button>
   </div>
 
@@ -1311,7 +1311,7 @@ body::after {
           </div>
           <div class="dungeon-stat-row">
             <span class="dungeon-stat-lbl" style="color:#444;font-size:clamp(7px,1.3vw,9px);">floor</span>
-            <span class="dungeon-stat-val" id="d-floor-val" style="color:#555;font-size:clamp(7px,1.3vw,9px);min-width:60px;text-align:left;">B1</span>
+            <span class="dungeon-stat-val" id="d-floor-val" style="color:#aaa;font-size:clamp(7px,1.3vw,9px);min-width:60px;text-align:left;">B1</span>
           </div>
         </div>
       </div>
@@ -2267,7 +2267,8 @@ function retryFromDeath() {
 function restartGame() {
   dungeon = { grid:[], playerX:1, playerY:1, player:null, fH:0, hasKey:false,
     enemiesBeaten:0, degradation:0, interactable:null, pendingBattle:null,
-    active:false, stepCount:0, revealedCells:new Set(), objects:[] };
+    active:false, stepCount:0, revealedCells:new Set(), objects:[],
+    floor:1, bossDefeated:false, ironMaidenSeen:false };
   state = {
     chosenClass: null,
     player: null,
@@ -2337,6 +2338,9 @@ let dungeon = {
   stepCount: 0,
   revealedCells: new Set(),
   objects: [],
+  floor: 1,
+  bossDefeated: false,
+  ironMaidenSeen: false,
 };
 
 // ── SFX additions for dungeon ───────────────────────────────────
@@ -2355,7 +2359,14 @@ Object.assign(SFX, {
 });
 
 // ── Dungeon Map Generator ───────────────────────────────────────
-function generateDungeon() {
+// Boss definitions per floor
+const DUNGEON_BOSSES = {
+  2: { name: 'old gatekeeper',    hp: 320, atk: 38 },
+  3: { name: 'lord of empty halls', hp: 480, atk: 52 },
+  4: { name: 's.fade',            hp: 640, atk: 68 },
+};
+
+function generateDungeon(floor = 1) {
   const grid = Array.from({ length: DUNGEON_H }, () => Array(DUNGEON_W).fill(DUNGEON_TILE.WALL));
   const objects = [];
 
@@ -2374,7 +2385,7 @@ function generateDungeon() {
   grid[1][1] = DUNGEON_TILE.FLOOR;
   carve(1, 1);
 
-  // Widen corridors slightly (make every-other floor also carve adjacent)
+  // Widen corridors
   for (let y = 1; y < DUNGEON_H - 1; y++) {
     for (let x = 1; x < DUNGEON_W - 1; x++) {
       if (grid[y][x] === DUNGEON_TILE.FLOOR && Math.random() < 0.22) {
@@ -2394,29 +2405,60 @@ function generateDungeon() {
       if (grid[y][x] === DUNGEON_TILE.FLOOR && !(x <= 2 && y <= 2))
         floors.push([x, y]);
 
-  function placeObj(type, count) {
+  function placeObj(type, count, meta) {
     for (let i = 0; i < count && floors.length; i++) {
       const idx = Math.floor(Math.random() * floors.length);
       const [x, y] = floors.splice(idx, 1)[0];
-      objects.push({ type, x, y, collected: false });
+      objects.push({ type, x, y, collected: false, ...(meta||{}) });
     }
   }
 
-  placeObj('enemy',  12);
+  placeObj('enemy',  12 + floor * 2);
   placeObj('chest',   5);
-  placeObj('loot',    8);
+  placeObj('loot',    8 + floor);
   placeObj('key',     1);
 
-  // Gate at a far floor tile
-  let gatePos = floors[floors.length - 1];
-  for (const [x, y] of floors) {
-    if (x + y > gatePos[0] + gatePos[1]) gatePos = [x, y];
+  // Boss room on floors 2-4: carve a 5x5 sealed room at far corner
+  if (floor >= 2 && DUNGEON_BOSSES[floor]) {
+    const bx = DUNGEON_W - 7, by = DUNGEON_H - 7;
+    // carve the room
+    for (let ry = by; ry < by + 5; ry++)
+      for (let rx = bx; rx < bx + 5; rx++)
+        grid[ry][rx] = DUNGEON_TILE.FLOOR;
+    // corridor from main maze into room
+    for (let rx = bx - 2; rx < bx; rx++) grid[by + 2][rx] = DUNGEON_TILE.FLOOR;
+    for (let ry = by - 2; ry < by; ry++) grid[ry][bx + 2] = DUNGEON_TILE.FLOOR;
+    // place boss in center of room
+    const boss = DUNGEON_BOSSES[floor];
+    objects.push({ type: 'boss', x: bx + 2, y: by + 2, collected: false,
+      name: boss.name, hp: boss.hp, maxHp: boss.hp, atk: boss.atk });
+    // gate is inside the boss room (far corner)
+    objects.push({ type: 'gate', x: bx + 4, y: by + 4, collected: false });
+    // remove any existing objects that landed in the boss room
+    for (let i = objects.length - 3; i >= 0; i--) {
+      const o = objects[i];
+      if (o.x >= bx && o.x < bx+5 && o.y >= by && o.y < by+5) objects.splice(i, 1);
+    }
+  } else {
+    // Floor 1: gate at a far floor tile
+    let gatePos = floors[0] || [DUNGEON_W-2, DUNGEON_H-2];
+    for (const [x, y] of floors) {
+      if (x + y > gatePos[0] + gatePos[1]) gatePos = [x, y];
+    }
+    objects.push({ type: 'gate', x: gatePos[0], y: gatePos[1], collected: false });
   }
-  objects.push({ type: 'gate', x: gatePos[0], y: gatePos[1], collected: false });
 
-  // Start marker
+  // Iron Maiden on floor 4 — random walkable tile near center
+  if (floor === 4) {
+    const midFloors = floors.filter(([x,y]) => Math.abs(x-17)<8 && Math.abs(y-17)<8);
+    if (midFloors.length) {
+      const idx = Math.floor(Math.random() * midFloors.length);
+      const [ix, iy] = midFloors.splice(idx, 1)[0];
+      objects.push({ type: 'ironmaiden', x: ix, y: iy, collected: false });
+    }
+  }
+
   grid[1][1] = DUNGEON_TILE.FLOOR;
-
   return { grid, objects };
 }
 
@@ -2578,6 +2620,33 @@ function renderDungeon() {
       ctx.beginPath();
       ctx.arc(cx2, cy2, 2, 0, Math.PI * 2);
       ctx.fill();
+    } else if (obj.type === 'boss') {
+      // Boss: flashing filled square with B
+      const bpulse = 0.6 + 0.4 * Math.abs(Math.sin(Date.now()/300));
+      ctx.globalAlpha = alpha * bpulse;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(sx + 1, sy + 1, CELL - 2, CELL - 2);
+      ctx.fillStyle = '#000000';
+      ctx.font = `bold ${Math.round(CELL * 0.65)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('!', sx + CELL/2, sy + CELL/2 + 1);
+      ctx.globalAlpha = alpha;
+    } else if (obj.type === 'ironmaiden') {
+      // Iron Maiden: white outline circle, IM inside
+      const impulse = 0.7 + 0.3 * Math.sin(Date.now()/700);
+      ctx.globalAlpha = alpha * impulse;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(sx + CELL/2, sy + CELL/2, CELL/2 - 2, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `${Math.round(CELL*0.4)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('?', sx + CELL/2, sy + CELL/2 + 1);
+      ctx.globalAlpha = alpha;
     }
     ctx.restore();
   }
@@ -2655,7 +2724,7 @@ function drawMinimap(ctx, pw, ph) {
     if (obj.collected) continue;
     if (!dungeon.revealedCells.has(obj.y * DUNGEON_W + obj.x)) continue;
     // key and gate get bright white; enemies get a medium dot
-    const sizes  = { enemy: 2, chest: 3, loot: 2, key: 3, gate: 3 };
+    const sizes  = { enemy: 2, chest: 3, loot: 2, key: 3, gate: 3, boss: 4, ironmaiden: 3 };
     const sz = sizes[obj.type] || 2;
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(
@@ -2789,9 +2858,12 @@ function openDungeon() {
   dungeon.active = true;
   dungeon.revealedCells = new Set();
   dungeon.stepCount = 0;
+  dungeon.floor = dungeon.floor || 1;
+  dungeon.bossDefeated = false;
+  dungeon.ironMaidenSeen = false;
 
   // generate map
-  const { grid, objects } = generateDungeon();
+  const { grid, objects } = generateDungeon(dungeon.floor);
   dungeon.grid = grid;
   dungeon.objects = objects;
   dungeon.playerX = 1;
@@ -2816,8 +2888,11 @@ function openDungeon() {
 
   showScreen('dungeon-screen');
   updateDungeonHUD();
-  dLog('you descend into the dungeon.', 'dl-sys');
-  dLog('find the key. reach the gate.', 'dl-sys');
+  const floorNames = ['','B1 \u2014 the first descent','B2 \u2014 crumbling halls','B3 \u2014 the hollow throne','B4 \u2014 s.fade\u2019s domain'];
+  dLog(`${floorNames[dungeon.floor] || 'B'+dungeon.floor} — you descend.`, 'dl-sys');
+  if (dungeon.floor === 1) dLog('find the key. reach the gate.', 'dl-sys');
+  else dLog('find the key. defeat the boss. reach the gate.', 'dl-sys');
+  document.getElementById('d-floor-val').textContent = 'B' + dungeon.floor;
   startDungeonRenderLoop();
   checkInteractable();
 
@@ -2892,7 +2967,7 @@ function checkInteractable() {
     const dx = Math.abs(obj.x - px), dy = Math.abs(obj.y - py);
     if (dx <= 1 && dy <= 1 && (dx + dy > 0)) {
       dungeon.interactable = obj;
-      const hints = { enemy:'fight enemy', chest:'open chest', loot:'pick up loot', key:'take key', gate: dungeon.hasKey ? 'enter gate' : 'locked — needs key' };
+      const hints = { enemy:'fight enemy', chest:'open chest', loot:'pick up loot', key:'take key', gate: dungeon.hasKey ? (dungeon.floor < 2 || dungeon.bossDefeated ? 'enter gate' : 'boss must die first') : 'locked — needs key', boss:'face the boss', ironmaiden:'approach her' };
       setDungeonInteractHint(hints[obj.type] || 'interact');
       return;
     }
@@ -2915,6 +2990,10 @@ function dungeonInteract() {
     takeKey(obj);
   } else if (obj.type === 'gate') {
     enterGate(obj);
+  } else if (obj.type === 'boss') {
+    triggerBossBattle(obj);
+  } else if (obj.type === 'ironmaiden') {
+    triggerIronMaidenDialogue(obj);
   }
 }
 
@@ -2966,21 +3045,166 @@ function enterGate(obj) {
     SFX.wall();
     return;
   }
+  if (dungeon.floor >= 2 && !dungeon.bossDefeated) {
+    dLog('the boss must be defeated before the gate opens.', 'dl-warn');
+    SFX.wall();
+    return;
+  }
   SFX.gate();
   obj.collected = true;
   dungeon.active = false;
   if (_dungeonRenderFrame) cancelAnimationFrame(_dungeonRenderFrame);
   document.removeEventListener('keydown', dungeonKeyHandler);
 
-  const totalFH = dungeon.fH;
-  state.totalFH = (state.totalFH || 0) + totalFH;
+  const floorFH = dungeon.fH;
+  state.totalFH = (state.totalFH || 0) + floorFH;
+
+  if (dungeon.floor >= 4) {
+    // Final floor cleared — full win
+    SFX.dungeonWin();
+    showDungeonOverlay(
+      'the dungeon is silent.',
+      `s.fade has fallen.\nfH collected: ${state.totalFH}\nenemies beaten: ${dungeon.enemiesBeaten}`,
+      [{ label: 'return to map', fn: () => { hideDungeonOverlay(); SFX.click(); dungeon.floor = 1; showMap(); } }]
+    );
+  } else {
+    // Floor cleared — offer continue or exit
+    SFX.dungeonWin();
+    const nextFloor = dungeon.floor + 1;
+    const floorNames = { 2:'B2 \u2014 crumbling halls', 3:'B3 \u2014 the hollow throne', 4:'B4 \u2014 s.fade\u2019s domain' };
+    showDungeonOverlay(
+      `B${dungeon.floor} cleared.`,
+      `fH this floor: ${floorFH}\nenemies beaten: ${dungeon.enemiesBeaten}\n\nyou feel your strength grow.`,
+      [
+        { label: `descend to ${floorNames[nextFloor] || 'B'+nextFloor}`, fn: () => {
+          hideDungeonOverlay();
+          // buff player between floors
+          const p = dungeon.player;
+          p.hp = p.maxHp; // full heal
+          p.maxHp = Math.floor(p.maxHp * 1.10);
+          p.hp = p.maxHp;
+          p.atk = Math.floor(p.atk * 1.08);
+          p.def = Math.min(0.75, (p.def||0) + 0.03);
+          dungeon.floor = nextFloor;
+          dungeon.fH = 0;
+          openDungeon();
+        }},
+        { label: 'return to map', fn: () => { hideDungeonOverlay(); SFX.click(); dungeon.floor = 1; showMap(); } }
+      ]
+    );
+  }
+}
+
+// ── Boss battle ───────────────────────────────────────────────────
+function triggerBossBattle(obj) {
+  SFX.encounter();
+  const boss = DUNGEON_BOSSES[dungeon.floor];
+  if (!boss) return;
+  dLog(`the air thickens. ${boss.name} awakens.`, 'dl-warn');
 
   showDungeonOverlay(
-    'gate cleared',
-    `you escaped the dungeon.\nfH collected: ${totalFH}\nenemies beaten: ${dungeon.enemiesBeaten}`,
-    [{ label: 'return to map', fn: () => { hideDungeonOverlay(); SFX.click(); showMap(); } }]
+    `⚠ boss`,
+    `${boss.name} rises from the dark.`,
+    [
+      { label: 'fight', fn: () => {
+        hideDungeonOverlay();
+        obj.collected = true;
+        dungeon._pendingBossObj = obj;
+        state.degradation = dungeon.degradation;
+        state.enemy = { name: boss.name, hp: boss.hp, maxHp: boss.hp, atk: boss.atk };
+        state.player = dungeon.player;
+        state.inBattle = true;
+        state.playerTurn = true;
+        state.bulwark = false;
+        state.dirgeturns = 0;
+        state.skillUsedThisBattle = false;
+        state._fromDungeon = true;
+        state._fromDungeonBoss = true;
+        setupBattleUI();
+        showScreen('battle-screen');
+        logMsg(`[ boss ] ${boss.name} — the dungeon shudders.`, 'sys');
+        setActionsEnabled(true);
+        dungeon.active = false;
+        if (_dungeonRenderFrame) cancelAnimationFrame(_dungeonRenderFrame);
+        document.removeEventListener('keydown', dungeonKeyHandler);
+      }},
+      { label: 'retreat', fn: () => { hideDungeonOverlay(); dLog('you back away. the air cools.', 'dl-sys'); } }
+    ]
   );
-  SFX.dungeonWin();
+}
+
+// ── Iron Maiden dialogue ─────────────────────────────────────────
+const IRON_MAIDEN_DIALOGUE = [
+  { speaker: "YOU",    text: "You?!" },
+  { speaker: "HER",    text: "This place doesn't end things. It just... decays." },
+  { speaker: "YOU",    text: "What's waiting below?" },
+  { speaker: "HER",    text: "A voice." },
+  { speaker: "YOU",    text: "Whose?" },
+  { speaker: "HER",    text: "No one's. Not anymore." },
+  { speaker: "YOU",    text: "You can hear it?" },
+  { speaker: "HER",    text: "Every breath I take." },
+  { speaker: "YOU",    text: "Then why stay?" },
+  { speaker: "HER",    text: "Because it's beautiful." },
+  { speaker: "YOU",    text: "Wait!" },
+  { speaker: "ACTION", text: "A jagged, menacing smile splits her face as she vanishes into the dark." },
+];
+
+function triggerIronMaidenDialogue(obj) {
+  if (dungeon.ironMaidenSeen) {
+    dLog('the air is still. she is gone.', 'dl-sys');
+    return;
+  }
+  dungeon.active = false;
+  if (_dungeonRenderFrame) cancelAnimationFrame(_dungeonRenderFrame);
+  document.removeEventListener('keydown', dungeonKeyHandler);
+
+  let lineIdx = 0;
+  const overlay = document.getElementById('dungeon-overlay');
+  const ovTitle = document.getElementById('dov-title');
+  const ovSub = document.getElementById('dov-sub');
+  const ovBtns = document.getElementById('dov-btns');
+  overlay.classList.add('active');
+
+  function showLine() {
+    const line = IRON_MAIDEN_DIALOGUE[lineIdx];
+    ovTitle.style.cssText = 'font-size:clamp(9px,2vw,12px);color:#888;letter-spacing:0.12em;text-align:left;width:100%;max-width:340px;';
+    ovSub.style.cssText = 'font-size:clamp(11px,2.4vw,15px);color:#fff;line-height:1.6;text-align:left;width:100%;max-width:340px;min-height:40px;';
+    ovBtns.innerHTML = '';
+
+    if (line.speaker === 'ACTION') {
+      ovTitle.textContent = '';
+      ovSub.style.cssText += 'color:#888;font-style:italic;';
+      ovSub.textContent = '[' + line.text + ']';
+    } else {
+      ovTitle.textContent = line.speaker + ':';
+      ovSub.textContent = line.text;
+    }
+
+    const isLast = lineIdx >= IRON_MAIDEN_DIALOGUE.length - 1;
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.style.marginTop = '18px';
+    btn.textContent = isLast ? 'she is gone.' : '▸';
+    btn.onclick = () => {
+      if (isLast) {
+        obj.collected = true;
+        dungeon.ironMaidenSeen = true;
+        overlay.classList.remove('active');
+        // restore overlay styles
+        ovTitle.style.cssText = '';
+        ovSub.style.cssText = '';
+        dungeon.active = true;
+        startDungeonRenderLoop();
+        document.addEventListener('keydown', dungeonKeyHandler);
+        dLog('she is gone. only stillness remains.', 'dl-sys');
+      } else {
+        lineIdx++;
+        showLine();
+      }
+    };
+    ovBtns.appendChild(btn);
+  }
+  showLine();
 }
 
 // ── random encounter ─────────────────────────────────────────────
@@ -3059,15 +3283,25 @@ function startDungeonEncounterBattle(enemyName) {
 function returnToDungeonAfterBattle(won) {
   dungeon.degradation = state.degradation;
   dungeon.player = state.player;
+  const wasBoss = state._fromDungeonBoss;
   state._fromDungeon = false;
+  state._fromDungeonBoss = false;
 
   if (won) {
     dungeon.enemiesBeaten++;
-    const hpHeal = Math.floor(dungeon.player.maxHp * 0.08);
-    const fhGain = 8 + Math.floor(Math.random() * 12);
-    dungeon.player.hp = Math.min(dungeon.player.maxHp, dungeon.player.hp + hpHeal);
-    dungeon.fH += fhGain;
-    dLog(`enemy defeated. +${hpHeal} hp, +${fhGain} fH.`, 'dl-find');
+    if (wasBoss) {
+      dungeon.bossDefeated = true;
+      const boss = DUNGEON_BOSSES[dungeon.floor];
+      const fhGain = 40 + Math.floor(Math.random() * 20);
+      dungeon.fH += fhGain;
+      dLog(`${boss ? boss.name : 'boss'} defeated. the gate opens. +${fhGain} fH.`, 'dl-key');
+    } else {
+      const hpHeal = Math.floor(dungeon.player.maxHp * 0.08);
+      const fhGain = 8 + Math.floor(Math.random() * 12);
+      dungeon.player.hp = Math.min(dungeon.player.maxHp, dungeon.player.hp + hpHeal);
+      dungeon.fH += fhGain;
+      dLog(`enemy defeated. +${hpHeal} hp, +${fhGain} fH.`, 'dl-find');
+    }
   }
 
   dungeon.active = true;
