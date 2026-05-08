@@ -1331,6 +1331,7 @@ body::after {
       <button class="action-btn" id="btn-cleanse" onclick="playerAction('cleanse')">cleanse</button>
       <button class="action-btn" id="btn-slip" onclick="playerAction('slip')">slip</button>
       <button class="action-btn" id="btn-break" onclick="playerAction('break')">break</button>
+      <button class="action-btn" id="btn-potion" onclick="playerAction('potion')" style="display:none;border-color:#66cc88;color:#66cc88;">potion</button>
     </div>
 
     
@@ -1391,6 +1392,8 @@ body::after {
       <span class="dungeon-fh-indicator">fH <span id="d-fh-val">0</span></span>
       <span class="dungeon-hud-sep">|</span>
       <span class="dungeon-key-indicator" id="d-key-indicator">🗝 no key</span>
+      <span class="dungeon-hud-sep">|</span>
+      <span class="dungeon-hud-label" style="color:#66cc88;">⬡ <span id="d-potion-val">0</span></span>
     </div>
 
     <!-- MAIN BODY -->
@@ -1814,6 +1817,7 @@ function setupBattleUI() {
 
   updateHUD();
   updateEnemyUI();
+  updatePotionBtn();
   document.getElementById('battle-log').innerHTML = '';
 }
 
@@ -2088,7 +2092,67 @@ const ENEMY_ART = {
 `[|||||]
 [| . |]
 [|_._|]
-[|||||]  `
+[|||||]  `,
+  'warrior of the colorless hall':
+` /[]\\ 
+[][][]
+ ||||
+/|  |\\`,
+  'the blackhearted jester':
+`heh heh
+(>  <)
+/\\hh/\\
+ h  h  `,
+  'the pale minstrel':
+` ♩~♩~
+(* . *)
+ /lll\\
+  | |   `,
+  'pale echo':
+` ~....~
+( .... )
+ ~....~
+  ||||  `,
+  'crimson husk':
+` {///}
+{/   /}
+ {///}
+  |||   `,
+  'bleed shard':
+`  /|\\ 
+ / | \\
+/  |  \\
+-- + --`,
+  'iron hollow':
+`[=====]
+[     ]
+[=====]
+ [|||]  `,
+  'vein crawler':
+` ~v~v~
+(v   v)
+ ~v~v~
+  vvv   `,
+  'ashen wraith':
+` *   *
+  \\ /
+   *
+  / \\  `,
+  'shattered knight':
+` /[/\\
+[/][/]
+ ||||
+/\\||/\\`,
+  'corrupted echo':
+` ?...?
+(? ? ?)
+ ?...?
+  |||   `,
+  'mimic chest':
+`[CHOMP]
+|>--<|
+|TEETH|
+[_|_|_] `
 };
 
 function updateEnemyUI() {
@@ -2109,11 +2173,20 @@ function logMsg(msg, type = '') {
   log.scrollTop = log.scrollHeight;
 }
 
+function updatePotionBtn() {
+  const btn = document.getElementById('btn-potion');
+  if (!btn) return;
+  const hasPotions = state._fromDungeon && dungeon.potions > 0;
+  btn.style.display = hasPotions ? '' : 'none';
+  btn.textContent = 'potion (' + (dungeon.potions || 0) + ')';
+}
+
 function setActionsEnabled(val) {
   ['btn-attack','btn-cleanse','btn-slip','btn-break'].forEach(id => {
     document.getElementById(id).disabled = !val;
   });
   document.getElementById('footer-skill').style.opacity = val ? '1' : '0.4';
+  if (val) updatePotionBtn();
 }
 
 function playerAction(action) {
@@ -2129,10 +2202,9 @@ function playerAction(action) {
 
   const deg = state.degradation;
   const chaosRoll = Math.random() * 100;
-  if (deg >= 80 && chaosRoll < 35) {
-
+  if (deg >= 80 && chaosRoll < (state._fromDungeon ? 20 : 35)) {
     logMsg('your grip slips. you lose yourself for a moment.', 'bad');
-    state.degradation = Math.min(100, state.degradation + 3);
+    state.degradation = Math.min(100, state.degradation + (state._fromDungeon ? 2 : 3));
     updateHUD();
     if (state.degradation >= 100) { triggerGameOver(); return; }
     setTimeout(() => enemyTurn(), 700);
@@ -2143,7 +2215,7 @@ function playerAction(action) {
     case 'attack': {
       SFX.attack();
       dmg = calcPlayerDmg(p.atk);
-      degGain = 12;
+      degGain = state._fromDungeon ? 6 : 12;
       e.hp -= dmg;
       logMsg(`you strike. ${dmg} damage.`, 'dmg');
       shakeEnemy();
@@ -2177,11 +2249,24 @@ function playerAction(action) {
     case 'break': {
       SFX.heavy();
       dmg = calcPlayerDmg(p.atk * 1.9);
-      degGain = 22;
+      degGain = state._fromDungeon ? 11 : 22;
       e.hp -= dmg;
       logMsg(`you crash through. ${dmg} heavy damage.`, 'dmg');
       shakeEnemy();
       break;
+    }
+    case 'potion': {
+      if (!state._fromDungeon || dungeon.potions <= 0) { logMsg('no potions.', 'sys'); setActionsEnabled(true); return; }
+      SFX.chest && SFX.chest();
+      dungeon.potions--;
+      const heal = Math.floor(p.maxHp * 0.45);
+      p.hp = Math.min(p.maxHp, p.hp + heal);
+      logMsg('you drink the potion. +' + heal + ' hp restored. (' + dungeon.potions + ' left)', 'good');
+      updateHUD();
+      updatePotionBtn();
+      state.playerTurn = false;
+      setTimeout(() => enemyTurn(), 500);
+      return;
     }
   }
 
@@ -2241,15 +2326,15 @@ function useClassSkill() {
       if (deg >= 70) {
         dmg = calcPlayerDmg(state.player.atk * 3.5);
         logMsg(`last laugh — you burn everything. ${dmg} damage.`, 'dmg');
-        state.degradation = Math.min(100, state.degradation + 18);
+        state.degradation = Math.min(100, state.degradation + (state._fromDungeon ? 9 : 18));
       } else if (deg >= 50) {
         dmg = calcPlayerDmg(state.player.atk * 2.5);
         logMsg(`last laugh — chaos fuels you. ${dmg} damage.`, 'dmg');
-        state.degradation = Math.min(100, state.degradation + 14);
+        state.degradation = Math.min(100, state.degradation + (state._fromDungeon ? 7 : 14));
       } else {
         dmg = calcPlayerDmg(state.player.atk * 1.5);
         logMsg(`last laugh — a vicious strike. ${dmg} damage.`, 'dmg');
-        state.degradation = Math.min(100, state.degradation + 8);
+        state.degradation = Math.min(100, state.degradation + (state._fromDungeon ? 4 : 8));
       }
       state.enemy.hp -= dmg;
       shakeEnemy();
@@ -2276,6 +2361,62 @@ function enemyTurn() {
   const e = state.enemy;
   const p = state.player;
 
+  // Mirror boss AI (floor 5 bosses): can attack, slip, cleanse; has degradation
+  if (e.isMirrorBoss) {
+    // Increase enemy degradation by 6-10 per turn
+    e.deg = (e.deg || 0) + (6 + Math.floor(Math.random() * 5));
+    if (e.deg >= e.maxDeg) {
+      logMsg(`${e.name}'s degradation fills. they collapse.`, 'good');
+      updateMirrorBossHUD(e.deg);
+      setTimeout(() => enemyDefeated(), 400);
+      return;
+    }
+    updateMirrorBossHUD(e.deg);
+
+    // Weighted action: slip (20%), cleanse when deg>40 (25%), attack (remaining)
+    const roll = Math.random();
+    const wantsSlip    = roll < 0.20;
+    const wantsCleanse = !wantsSlip && roll < 0.45 && e.deg > 40;
+
+    if (wantsSlip) {
+      const clr = Math.floor(10 + Math.random() * 10);
+      e.deg = Math.max(0, e.deg - clr);
+      logMsg(`${e.name} slips. degradation drops by ${clr}.`, 'bad');
+      updateMirrorBossHUD(e.deg);
+      setTimeout(() => endEnemyTurn(), 500);
+      return;
+    }
+    if (wantsCleanse) {
+      const clr = Math.floor(18 + Math.random() * 14);
+      e.deg = Math.max(0, e.deg - clr);
+      logMsg(`${e.name} cleanses. degradation drops by ${clr}.`, 'bad');
+      updateMirrorBossHUD(e.deg);
+      setTimeout(() => endEnemyTurn(), 500);
+      return;
+    }
+    // Attack
+    let atkMult = 1;
+    if (state.dirgeturns > 0) {
+      atkMult = 0.5;
+      state.dirgeturns--;
+      logMsg(`the dirge lingers. enemy at half strength.`, 'good');
+    }
+    let dmg = Math.floor(e.atk * atkMult * (0.8 + Math.random() * 0.4));
+    if (state.bulwark > 0) {
+      dmg = Math.floor(dmg * 0.25);
+      state.bulwark--;
+      logMsg(`${e.name} strikes. bulwark holds (${state.bulwark} left). ${dmg} damage.`, 'bad');
+    } else {
+      logMsg(`${e.name} strikes for ${dmg}.`, 'bad');
+    }
+    p.hp -= dmg;
+    flashHit();
+    updateHUD();
+    if (p.hp <= 0) { setTimeout(() => triggerGameOver(), 500); return; }
+    setTimeout(() => endEnemyTurn(), 500);
+    return;
+  }
+
   let atkMult = 1;
   if (state.dirgeturns > 0) {
     atkMult = 0.5;
@@ -2284,6 +2425,11 @@ function enemyTurn() {
   }
 
   let dmg = Math.floor(e.atk * atkMult * (0.8 + Math.random() * 0.4));
+
+  // Iron Maiden phase 2 check: if enemy HP drops below 50% and phase hasn't changed
+  if (e.isIronMaidenFinal && e.phase === 1 && e.hp <= e.maxHp * 0.5 && !e._phase2triggered) {
+    e._phase2triggered = true;
+  }
 
   if (state.bulwark > 0) {
     dmg = Math.floor(dmg * 0.25);
@@ -2341,6 +2487,14 @@ function enemyDefeated() {
   state.inBattle = false;
   SFX.victory();
   if (state._fromDungeon) {
+    // Check if Iron Maiden first phase down
+    const e = state.enemy;
+    if (e && e.isIronMaidenFinal && e.phase === 1 && !e._phase2done) {
+      e._phase2done = true;
+      state._ironMaidenFinal = true;
+      setTimeout(() => triggerIronMaidenPhase2Dialogue(), 400);
+      return;
+    }
     setTimeout(() => returnToDungeonAfterBattle(true), 400);
     return;
   }
@@ -2428,7 +2582,8 @@ function restartGame() {
   dungeon = { grid:[], playerX:1, playerY:1, player:null, fH:0, hasKey:false,
     enemiesBeaten:0, degradation:0, interactable:null, pendingBattle:null,
     active:false, stepCount:0, revealedCells:new Set(), objects:[],
-    floor:1, bossDefeated:false, ironMaidenSeen:false };
+    floor:1, bossDefeated:false, ironMaidenSeen:false, bossesDefeated:[],
+    dungeonW:35, dungeonH:35, potions:0 };
   state = {
     chosenClass: null,
     player: null,
@@ -2477,11 +2632,19 @@ const DUNGEON_TILE = {
   KEY:    6,
   START:  7,
   BOSS:   8,
-  VISITED:9
+  VISITED:9,
+  TRAP:   10,
+  MIMIC:  11,
+  INTEGRATION: 12
 };
 
 const DUNGEON_W = 35;
 const DUNGEON_H = 35;
+// Floors 5-6 are 3x bigger
+function getDungeonSize(floor) {
+  if (floor >= 5) return { w: 61, h: 61 };
+  return { w: DUNGEON_W, h: DUNGEON_H };
+}
 
 let dungeon = {
   grid: [],
@@ -2501,6 +2664,10 @@ let dungeon = {
   floor: 1,
   bossDefeated: false,
   ironMaidenSeen: false,
+  bossesDefeated: [],  // for floor 5's 3 bosses
+  dungeonW: 35,
+  dungeonH: 35,
+  potions: 0,
 };
 
 // ── SFX additions for dungeon ───────────────────────────────────
@@ -2523,19 +2690,64 @@ Object.assign(SFX, {
 const DUNGEON_BOSSES = {
   2: { name: 'old gatekeeper',    hp: 260, atk: 22 },
   3: { name: 'lord of empty halls', hp: 480, atk: 52 },
-  4: { name: 's.fade',            hp: 640, atk: 68 },
+  4: { name: 's.fade',            hp: 460, atk: 55 },
+  // Floor 5: three boss rooms
+  5: [
+    { name: 'warrior of the colorless hall', hp: 680, atk: 58, class: 'knight', deg: 0 },
+    { name: 'the blackhearted jester',        hp: 620, atk: 64, class: 'trickster', deg: 0 },
+    { name: 'the pale minstrel',              hp: 640, atk: 56, class: 'bard', deg: 0 },
+  ],
+  // Floor 6: one boss room
+  6: { name: 'iron maiden', hp: 900, atk: 60, phase: 1 },
 };
 
+// Floor 5 & 6 new enemies
+const FLOOR56_ENEMIES = [
+  'pale echo',
+  'crimson husk',
+  'bleed shard',
+  'iron hollow',
+  'vein crawler',
+  'ashen wraith',
+  'shattered knight',
+  'corrupted echo',
+];
+
+const FLOOR56_ENEMY_STATS = {
+  'pale echo':        { hp: 310, atk: 35 },
+  'crimson husk':     { hp: 340, atk: 38 },
+  'bleed shard':      { hp: 295, atk: 42 },
+  'iron hollow':      { hp: 360, atk: 34 },
+  'vein crawler':     { hp: 330, atk: 40 },
+  'ashen wraith':     { hp: 280, atk: 44 },
+  'shattered knight': { hp: 380, atk: 37 },
+  'corrupted echo':   { hp: 350, atk: 41 },
+};
+
+// Integration item definitions (pickable stat buffs)
+const INTEGRATION_BUFFS = [
+  { name: 'iron integration',  effect: 'maxhp', value: 30,   desc: '+30 max hp' },
+  { name: 'void integration',  effect: 'atk',   value: 8,    desc: '+8 atk' },
+  { name: 'pale integration',  effect: 'def',   value: 0.05, desc: '+5% def' },
+  { name: 'shard integration', effect: 'sp',    value: 1,    desc: '+1 max sp' },
+  { name: 'echo integration',  effect: 'heal',  value: 0.15, desc: '+15% hp restored' },
+];
+
 function generateDungeon(floor = 1) {
-  const grid = Array.from({ length: DUNGEON_H }, () => Array(DUNGEON_W).fill(DUNGEON_TILE.WALL));
+  const { w: DW, h: DH } = getDungeonSize(floor);
+  dungeon.dungeonW = DW;
+  dungeon.dungeonH = DH;
+
+  const grid = Array.from({ length: DH }, () => Array(DW).fill(DUNGEON_TILE.WALL));
   const objects = [];
+  const isPaleFloor = floor >= 5;
 
   // Recursive backtracking maze
   function carve(x, y) {
     const dirs = [[0,-2],[2,0],[0,2],[-2,0]].sort(() => Math.random() - 0.5);
     for (const [dx, dy] of dirs) {
       const nx = x + dx, ny = y + dy;
-      if (nx > 0 && ny > 0 && nx < DUNGEON_W-1 && ny < DUNGEON_H-1 && grid[ny][nx] === DUNGEON_TILE.WALL) {
+      if (nx > 0 && ny > 0 && nx < DW-1 && ny < DH-1 && grid[ny][nx] === DUNGEON_TILE.WALL) {
         grid[y + dy/2][x + dx/2] = DUNGEON_TILE.FLOOR;
         grid[ny][nx] = DUNGEON_TILE.FLOOR;
         carve(nx, ny);
@@ -2546,13 +2758,13 @@ function generateDungeon(floor = 1) {
   carve(1, 1);
 
   // Widen corridors
-  for (let y = 1; y < DUNGEON_H - 1; y++) {
-    for (let x = 1; x < DUNGEON_W - 1; x++) {
+  for (let y = 1; y < DH - 1; y++) {
+    for (let x = 1; x < DW - 1; x++) {
       if (grid[y][x] === DUNGEON_TILE.FLOOR && Math.random() < 0.22) {
         const dirs = [[0,1],[1,0],[0,-1],[-1,0]];
         const d = dirs[Math.floor(Math.random() * 4)];
         const nx = x + d[0], ny = y + d[1];
-        if (nx > 0 && ny > 0 && nx < DUNGEON_W-1 && ny < DUNGEON_H-1)
+        if (nx > 0 && ny > 0 && nx < DW-1 && ny < DH-1)
           grid[ny][nx] = DUNGEON_TILE.FLOOR;
       }
     }
@@ -2560,8 +2772,8 @@ function generateDungeon(floor = 1) {
 
   // Collect all floor tiles except start corner
   const floors = [];
-  for (let y = 1; y < DUNGEON_H - 1; y++)
-    for (let x = 1; x < DUNGEON_W - 1; x++)
+  for (let y = 1; y < DH - 1; y++)
+    for (let x = 1; x < DW - 1; x++)
       if (grid[y][x] === DUNGEON_TILE.FLOOR && !(x <= 2 && y <= 2))
         floors.push([x, y]);
 
@@ -2573,42 +2785,159 @@ function generateDungeon(floor = 1) {
     }
   }
 
-  placeObj('enemy',  12 + floor * 2);
-  placeObj('chest',   5);
-  placeObj('loot',    8 + floor);
-  placeObj('key',     1);
+  if (isPaleFloor) {
+    // Floors 5-6: buffed loot, new enemies, traps, integration items
+    const f56enemies = FLOOR56_ENEMIES;
+    placeObj('enemy', 18 + floor * 2, { enemyPool: f56enemies });
+    placeObj('chest',  8);   // buffed chests
+    placeObj('loot',  14);   // buffed loot
+    placeObj('key',    1);
+    // Traps: spike traps and mimic chests
+    for (let i = 0; i < 6; i++) {
+      const idx = Math.floor(Math.random() * floors.length);
+      const [x, y] = floors.splice(idx, 1)[0];
+      objects.push({ type: 'trap', x, y, collected: false, trapType: 'spike' });
+    }
+    for (let i = 0; i < 4; i++) {
+      const idx = Math.floor(Math.random() * floors.length);
+      const [x, y] = floors.splice(idx, 1)[0];
+      objects.push({ type: 'mimic', x, y, collected: false });
+    }
+    // Integration items
+    for (let i = 0; i < 5; i++) {
+      const buff = INTEGRATION_BUFFS[i % INTEGRATION_BUFFS.length];
+      const idx = Math.floor(Math.random() * floors.length);
+      const [x, y] = floors.splice(idx, 1)[0];
+      objects.push({ type: 'integration', x, y, collected: false, buff });
+    }
+  } else {
+    placeObj('enemy',  12 + floor * 2);
+    placeObj('chest',   5);
+    placeObj('loot',    8 + floor);
+    placeObj('key',     1);
+  }
 
-  // Boss room on floors 2-4: carve a 5x5 sealed room at far corner
-  if (floor >= 2 && DUNGEON_BOSSES[floor]) {
-    const bx = DUNGEON_W - 7, by = DUNGEON_H - 7;
-    // carve the room
+  // Boss rooms for floors 2-4
+  if (floor >= 2 && floor <= 4 && DUNGEON_BOSSES[floor]) {
+    const bx = DW - 7, by = DH - 7;
     for (let ry = by; ry < by + 5; ry++)
       for (let rx = bx; rx < bx + 5; rx++)
         grid[ry][rx] = DUNGEON_TILE.FLOOR;
-    // corridor from main maze into room
     for (let rx = bx - 2; rx < bx; rx++) grid[by + 2][rx] = DUNGEON_TILE.FLOOR;
     for (let ry = by - 2; ry < by; ry++) grid[ry][bx + 2] = DUNGEON_TILE.FLOOR;
-    // place boss in center of room
     const boss = DUNGEON_BOSSES[floor];
     objects.push({ type: 'boss', x: bx + 2, y: by + 2, collected: false,
       name: boss.name, hp: boss.hp, maxHp: boss.hp, atk: boss.atk });
-    // gate is inside the boss room (far corner)
     objects.push({ type: 'gate', x: bx + 4, y: by + 4, collected: false });
-    // remove any existing objects that landed in the boss room
     for (let i = objects.length - 3; i >= 0; i--) {
       const o = objects[i];
       if (o.x >= bx && o.x < bx+5 && o.y >= by && o.y < by+5) objects.splice(i, 1);
     }
-  } else {
-    // Floor 1: gate at a far floor tile
-    let gatePos = floors[0] || [DUNGEON_W-2, DUNGEON_H-2];
+  } else if (floor === 5) {
+    // Floor 5: 3 boss rooms at corners, with guaranteed connectivity
+    const bossArr = DUNGEON_BOSSES[5];
+    // [bx, by, corridor directions]: each room gets two corridors carved toward center
+    const roomDefs = [
+      { bx: DW - 11, by: 2,       hDir: -1, vDir:  1 },  // top-right: carve left + down
+      { bx: 2,       by: DH - 11, hDir:  1, vDir: -1 },  // bot-left:  carve right + up
+      { bx: DW - 11, by: DH - 11, hDir: -1, vDir: -1 },  // bot-right: carve left + up
+    ];
+
+    for (let bi = 0; bi < 3; bi++) {
+      let { bx, by, hDir, vDir } = roomDefs[bi];
+      bx = Math.max(2, Math.min(DW - 9, bx));
+      by = Math.max(2, Math.min(DH - 9, by));
+
+      // Carve the 7×7 boss room
+      for (let ry = by; ry < by + 7; ry++)
+        for (let rx = bx; rx < bx + 7; rx++)
+          if (ry > 0 && rx > 0 && ry < DH - 1 && rx < DW - 1)
+            grid[ry][rx] = DUNGEON_TILE.FLOOR;
+
+      // Horizontal corridor: walk from room edge toward center until maze floor found
+      const connY = by + 3;
+      const hStart = hDir < 0 ? bx - 1 : bx + 7;
+      const hEnd   = hDir < 0 ? 1 : DW - 2;
+      for (let rx = hStart; hDir < 0 ? rx >= hEnd : rx <= hEnd; rx += hDir) {
+        if (rx < 1 || rx >= DW - 1) break;
+        grid[connY][rx] = DUNGEON_TILE.FLOOR;
+        const peek = rx + hDir;
+        if (peek >= 1 && peek < DW - 1 && grid[connY][peek] === DUNGEON_TILE.FLOOR) break;
+      }
+
+      // Vertical corridor: walk from room edge toward center until maze floor found
+      const connX = bx + 3;
+      const vStart = vDir < 0 ? by - 1 : by + 7;
+      const vEnd   = vDir < 0 ? 1 : DH - 2;
+      for (let ry = vStart; vDir < 0 ? ry >= vEnd : ry <= vEnd; ry += vDir) {
+        if (ry < 1 || ry >= DH - 1) break;
+        grid[ry][connX] = DUNGEON_TILE.FLOOR;
+        const peek = ry + vDir;
+        if (peek >= 1 && peek < DH - 1 && grid[peek][connX] === DUNGEON_TILE.FLOOR) break;
+      }
+
+      const b = bossArr[bi];
+      objects.push({
+        type: 'boss5', x: bx + 3, y: by + 3, collected: false, bossIndex: bi,
+        name: b.name, hp: b.hp, maxHp: b.hp, atk: b.atk,
+        bossClass: b.class, deg: 0, maxDeg: 100
+      });
+      // Remove any random objects that landed inside the boss room
+      for (let i = objects.length - 2; i >= 0; i--) {
+        const o = objects[i];
+        if (o.x >= bx && o.x < bx + 7 && o.y >= by && o.y < by + 7 && o.type !== 'boss5') objects.splice(i, 1);
+      }
+    }
+
+    // Ensure a key exists somewhere reachable
+    if (!objects.find(o => o.type === 'key')) {
+      const keyTile = floors[Math.floor(Math.random() * Math.max(1, floors.length))];
+      if (keyTile) objects.push({ type: 'key', x: keyTile[0], y: keyTile[1], collected: false });
+    }
+
+    // Gate at center — force floor tiles around it so it's always walkable
+    const gx = Math.floor(DW / 2), gy = Math.floor(DH / 2);
+    for (let ry = gy - 1; ry <= gy + 1; ry++)
+      for (let rx = gx - 1; rx <= gx + 1; rx++)
+        if (ry > 0 && rx > 0 && ry < DH - 1 && rx < DW - 1)
+          grid[ry][rx] = DUNGEON_TILE.FLOOR;
+    objects.push({ type: 'gate', x: gx, y: gy, collected: false, requiresAllBosses: true });
+  } else if (floor === 6) {
+    // Floor 6: 1 boss room, Iron Maiden
+    const bx = DW - 10, by = Math.floor(DH / 2) - 3;
+    for (let ry = by; ry < by + 7; ry++)
+      for (let rx = bx; rx < bx + 7; rx++)
+        if (ry > 0 && rx > 0 && ry < DH - 1 && rx < DW - 1)
+          grid[ry][rx] = DUNGEON_TILE.FLOOR;
+    // Carve leftward from boss room until we hit maze floor
+    const connY6 = by + 3, connX6 = bx + 3;
+    for (let rx = bx - 1; rx >= 1; rx--) {
+      grid[connY6][rx] = DUNGEON_TILE.FLOOR;
+      if (rx > 1 && grid[connY6][rx - 1] === DUNGEON_TILE.FLOOR) break;
+    }
+    for (let ry = by - 1; ry >= 1; ry--) {
+      grid[ry][connX6] = DUNGEON_TILE.FLOOR;
+      if (ry > 1 && grid[ry - 1][connX6] === DUNGEON_TILE.FLOOR) break;
+    }
+    const im = DUNGEON_BOSSES[6];
+    objects.push({
+      type: 'ironmaiden_boss', x: bx + 3, y: by + 3, collected: false,
+      name: im.name, hp: im.hp, maxHp: im.hp, atk: im.atk, phase: 1
+    });
+    objects.push({ type: 'gate', x: bx + 6, y: by + 5, collected: false });
+    for (let i = objects.length - 3; i >= 0; i--) {
+      const o = objects[i];
+      if (o.x >= bx && o.x < bx+7 && o.y >= by && o.y < by+7 && o.type !== 'ironmaiden_boss') objects.splice(i, 1);
+    }
+  } else if (floor === 1) {
+    let gatePos = floors[0] || [DW-2, DH-2];
     for (const [x, y] of floors) {
       if (x + y > gatePos[0] + gatePos[1]) gatePos = [x, y];
     }
     objects.push({ type: 'gate', x: gatePos[0], y: gatePos[1], collected: false });
   }
 
-  // Iron Maiden on floor 4 — random walkable tile near center
+  // Iron Maiden teaser on floor 4
   if (floor === 4) {
     const midFloors = floors.filter(([x,y]) => Math.abs(x-17)<8 && Math.abs(y-17)<8);
     if (midFloors.length) {
@@ -2627,15 +2956,15 @@ const CELL = 14; // tile size in px
 const VIEW_RADIUS = 7; // fog of war radius
 
 function renderDungeon() {
-  // ── Two-color palette: pure black + bright white ──
-  const C_BG      = '#000000';   // void / unexplored
-  const C_WALL    = '#0d0d0d';   // wall fill (near-black)
-  const C_WALLEDGE= '#1e1e1e';   // wall border
-  const C_FLOOR   = '#ffffff';   // lit floor: bright white
-  const C_FLOOR_DIM = '#888888'; // seen but not in view
-  const C_GRID    = 'rgba(0,0,0,0.35)'; // grid lines on floor
-  const C_ACCENT  = '#ffffff';   // all objects: white
-  const C_SHADOW  = '#000000';   // object shadow/bg
+  const DW = dungeon.dungeonW || DUNGEON_W;
+  const DH = dungeon.dungeonH || DUNGEON_H;
+  const isPaleFloor = dungeon.floor >= 5;
+
+  // Palette: pale red tint for floors 5-6, else black/white
+  const C_BG       = isPaleFloor ? '#0d0000' : '#000000';
+  const C_WALL     = isPaleFloor ? '#1a0505' : '#0d0d0d';
+  const C_WALLEDGE = isPaleFloor ? '#3a0a0a' : '#1e1e1e';
+  const C_GRID     = isPaleFloor ? 'rgba(80,0,0,0.35)' : 'rgba(0,0,0,0.35)';
 
   const canvas = document.getElementById('dungeon-canvas');
   const area = canvas.parentElement;
@@ -2658,8 +2987,8 @@ function renderDungeon() {
   // draw tiles
   for (let y = startRow; y <= endRow; y++) {
     for (let x = startCol; x <= endCol; x++) {
-      if (y < 0 || y >= DUNGEON_H || x < 0 || x >= DUNGEON_W) continue;
-      const key = y * DUNGEON_W + x;
+      if (y < 0 || y >= DH || x < 0 || x >= DW) continue;
+      const key = y * DW + x;
       const inView = Math.abs(x - px) <= VIEW_RADIUS && Math.abs(y - py) <= VIEW_RADIUS;
       if (inView) dungeon.revealedCells.add(key);
       const revealed = dungeon.revealedCells.has(key);
@@ -2678,29 +3007,34 @@ function renderDungeon() {
           ctx.lineWidth = 0.5;
           ctx.strokeRect(sx + 0.5, sy + 0.5, CELL - 1, CELL - 1);
         }
-        // walls in fog stay black (no draw)
       } else {
-        // floor — bright white in view, dim grey when seen-but-not-in-view
         if (inView) {
           const brightness = Math.max(0.45, 1 - dist / (VIEW_RADIUS + 1));
           const v = Math.round(brightness * 255);
-          ctx.fillStyle = `rgb(${v},${v},${v})`;
+          if (isPaleFloor) {
+            // pale red floor: r high, g/b low
+            const r2 = v, g2 = Math.round(v * 0.55), b2 = Math.round(v * 0.55);
+            ctx.fillStyle = `rgb(${r2},${g2},${b2})`;
+          } else {
+            ctx.fillStyle = `rgb(${v},${v},${v})`;
+          }
           ctx.fillRect(sx, sy, CELL, CELL);
           ctx.strokeStyle = C_GRID;
           ctx.lineWidth = 0.5;
           ctx.strokeRect(sx + 0.5, sy + 0.5, CELL - 1, CELL - 1);
         } else {
-          ctx.fillStyle = '#222222';
+          ctx.fillStyle = isPaleFloor ? '#2a0808' : '#222222';
           ctx.fillRect(sx, sy, CELL, CELL);
         }
       }
     }
   }
 
-  // draw objects — all rendered in white/black only
+  // draw objects
   for (const obj of dungeon.objects) {
     if (obj.collected) continue;
-    const key = obj.y * DUNGEON_W + obj.x;
+    const DW2 = dungeon.dungeonW || DUNGEON_W;
+    const key = obj.y * DW2 + obj.x;
     const inView = Math.abs(obj.x - px) <= VIEW_RADIUS && Math.abs(obj.y - py) <= VIEW_RADIUS;
     if (!dungeon.revealedCells.has(key) && !inView) continue;
 
@@ -2713,7 +3047,7 @@ function renderDungeon() {
     ctx.globalAlpha = alpha;
 
     if (obj.type === 'gate') {
-      // Gate: thick white border box, solid black center, arrow or lock glyph
+      const canOpen = dungeon.hasKey && (dungeon.floor < 2 || dungeon.bossDefeated || (dungeon.floor === 5 && (dungeon.bossesDefeated||[]).length >= 3));
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 2;
       ctx.strokeRect(sx + 2, sy + 2, CELL - 4, CELL - 4);
@@ -2723,13 +3057,11 @@ function renderDungeon() {
       ctx.font = `bold ${Math.round(CELL * 0.55)}px monospace`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(dungeon.hasKey ? '>' : '#', sx + CELL/2, sy + CELL/2 + 1);
+      ctx.fillText(canOpen ? '>' : '#', sx + CELL/2, sy + CELL/2 + 1);
     } else if (obj.type === 'key') {
-      // Key: pulsing bright white diamond
       const pulse = 0.7 + 0.3 * Math.sin(t * 2);
       ctx.globalAlpha = alpha * pulse;
       ctx.fillStyle = '#ffffff';
-      // diamond shape
       const cx2 = sx + CELL/2, cy2 = sy + CELL/2;
       const r = CELL * 0.38;
       ctx.beginPath();
@@ -2781,7 +3113,7 @@ function renderDungeon() {
       ctx.arc(cx2, cy2, 2, 0, Math.PI * 2);
       ctx.fill();
     } else if (obj.type === 'boss') {
-      // Boss: flashing filled square with B
+      // Boss: flashing filled square with !
       const bpulse = 0.6 + 0.4 * Math.abs(Math.sin(Date.now()/300));
       ctx.globalAlpha = alpha * bpulse;
       ctx.fillStyle = '#ffffff';
@@ -2792,8 +3124,35 @@ function renderDungeon() {
       ctx.textBaseline = 'middle';
       ctx.fillText('!', sx + CELL/2, sy + CELL/2 + 1);
       ctx.globalAlpha = alpha;
+    } else if (obj.type === 'boss5') {
+      // Floor 5 boss: pale red pulsing square with ★
+      const bpulse = 0.5 + 0.5 * Math.abs(Math.sin(Date.now()/250));
+      ctx.globalAlpha = alpha * bpulse;
+      ctx.fillStyle = '#ff6060';
+      ctx.fillRect(sx + 1, sy + 1, CELL - 2, CELL - 2);
+      ctx.fillStyle = '#000';
+      ctx.font = `bold ${Math.round(CELL * 0.6)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('★', sx + CELL/2, sy + CELL/2 + 1);
+      ctx.globalAlpha = alpha;
+    } else if (obj.type === 'ironmaiden_boss') {
+      // Iron Maiden: slow red pulse circle
+      const impulse = 0.5 + 0.5 * Math.abs(Math.sin(Date.now()/400));
+      ctx.globalAlpha = alpha * impulse;
+      ctx.strokeStyle = '#ff4444';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(sx + CELL/2, sy + CELL/2, CELL/2 - 1, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.fillStyle = '#ff4444';
+      ctx.font = `bold ${Math.round(CELL*0.45)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('!', sx + CELL/2, sy + CELL/2 + 1);
+      ctx.globalAlpha = alpha;
     } else if (obj.type === 'ironmaiden') {
-      // Iron Maiden: white outline circle, IM inside
+      // Iron Maiden teaser: white outline circle, ? inside
       const impulse = 0.7 + 0.3 * Math.sin(Date.now()/700);
       ctx.globalAlpha = alpha * impulse;
       ctx.strokeStyle = '#ffffff';
@@ -2806,6 +3165,39 @@ function renderDungeon() {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('?', sx + CELL/2, sy + CELL/2 + 1);
+      ctx.globalAlpha = alpha;
+    } else if (obj.type === 'trap') {
+      // Trap: red X, blends with floor (slightly hidden)
+      ctx.globalAlpha = alpha * 0.65;
+      ctx.fillStyle = '#cc2222';
+      ctx.font = `bold ${Math.round(CELL * 0.7)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('^', sx + CELL/2, sy + CELL/2 + 1);
+    } else if (obj.type === 'mimic') {
+      // Mimic: looks like a chest (C) but has a subtle flicker
+      const mflicker = Math.sin(Date.now()/300) > 0.8;
+      ctx.strokeStyle = mflicker ? '#ff4444' : '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(sx + 2, sy + 3, CELL - 4, CELL - 6);
+      ctx.beginPath();
+      ctx.moveTo(sx + 2, sy + Math.round(CELL * 0.42));
+      ctx.lineTo(sx + CELL - 2, sy + Math.round(CELL * 0.42));
+      ctx.stroke();
+      ctx.fillStyle = mflicker ? '#ff4444' : '#ffffff';
+      ctx.font = `${Math.round(CELL * 0.38)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('C', sx + CELL/2, sy + CELL/2 + 1);
+    } else if (obj.type === 'integration') {
+      // Integration: pulsing pale red star
+      const ipulse = 0.7 + 0.3 * Math.sin(Date.now()/500 + obj.x);
+      ctx.globalAlpha = alpha * ipulse;
+      ctx.fillStyle = '#ff9090';
+      ctx.font = `${Math.round(CELL * 0.6)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('◈', sx + CELL/2, sy + CELL/2 + 1);
       ctx.globalAlpha = alpha;
     }
     ctx.restore();
@@ -2857,36 +3249,38 @@ function renderDungeon() {
 }
 
 function drawMinimap(ctx, pw, ph) {
+  const DW = dungeon.dungeonW || DUNGEON_W;
+  const DH = dungeon.dungeonH || DUNGEON_H;
   const mmW = 88, mmH = 88;
   const mmX = pw - mmW - 8, mmY = 8;
-  const tW = mmW / DUNGEON_W, tH = mmH / DUNGEON_H;
+  const tW = mmW / DW, tH = mmH / DH;
+  const isPaleFloor = dungeon.floor >= 5;
 
-  // background
-  ctx.fillStyle = '#000000';
+  ctx.fillStyle = isPaleFloor ? '#0d0000' : '#000000';
   ctx.fillRect(mmX - 1, mmY - 1, mmW + 2, mmH + 2);
-  ctx.strokeStyle = '#ffffff';
+  ctx.strokeStyle = isPaleFloor ? '#993333' : '#ffffff';
   ctx.lineWidth = 1;
   ctx.strokeRect(mmX - 1, mmY - 1, mmW + 2, mmH + 2);
 
-  for (let y = 0; y < DUNGEON_H; y++) {
-    for (let x = 0; x < DUNGEON_W; x++) {
-      const key = y * DUNGEON_W + x;
+  for (let y = 0; y < DH; y++) {
+    for (let x = 0; x < DW; x++) {
+      const key = y * DW + x;
       if (!dungeon.revealedCells.has(key)) continue;
       const tile = dungeon.grid[y][x];
-      // two-color minimap: wall=dark grey, floor=white
-      ctx.fillStyle = tile === DUNGEON_TILE.WALL ? '#1a1a1a' : '#cccccc';
+      ctx.fillStyle = tile === DUNGEON_TILE.WALL
+        ? (isPaleFloor ? '#2a0808' : '#1a1a1a')
+        : (isPaleFloor ? '#cc8888' : '#cccccc');
       ctx.fillRect(mmX + x * tW, mmY + y * tH, Math.ceil(tW), Math.ceil(tH));
     }
   }
 
-  // objects on minimap — all white, distinguished by size
   for (const obj of dungeon.objects) {
     if (obj.collected) continue;
-    if (!dungeon.revealedCells.has(obj.y * DUNGEON_W + obj.x)) continue;
-    // key and gate get bright white; enemies get a medium dot
-    const sizes  = { enemy: 2, chest: 3, loot: 2, key: 3, gate: 3, boss: 4, ironmaiden: 3 };
+    if (!dungeon.revealedCells.has(obj.y * DW + obj.x)) continue;
+    const sizes = { enemy: 2, chest: 3, loot: 2, key: 3, gate: 3, boss: 4, boss5: 4, ironmaiden: 3, ironmaiden_boss: 4, trap: 2, mimic: 3, integration: 3 };
+    const colors = { boss5: '#ff6060', ironmaiden_boss: '#ff4444', integration: '#ff9090', trap: '#cc2222', key: '#ffffff', gate: '#ffffff' };
     const sz = sizes[obj.type] || 2;
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = colors[obj.type] || '#ffffff';
     ctx.fillRect(
       mmX + obj.x * tW + (tW - sz) / 2,
       mmY + obj.y * tH + (tH - sz) / 2,
@@ -2894,7 +3288,6 @@ function drawMinimap(ctx, pw, ph) {
     );
   }
 
-  // player dot — small bright square
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(mmX + dungeon.playerX * tW - 1.5, mmY + dungeon.playerY * tH - 1.5, 4, 4);
 }
@@ -2940,6 +3333,9 @@ function updateDungeonHUD() {
   const ki = document.getElementById('d-key-indicator');
   ki.textContent = dungeon.hasKey ? '🗝 key found' : '🗝 no key';
   ki.className = 'dungeon-key-indicator' + (dungeon.hasKey ? ' has-key' : '');
+
+  const potEl = document.getElementById('d-potion-val');
+  if (potEl) potEl.textContent = dungeon.potions || 0;
 
   // deg meter
   const deg = dungeon.degradation;
@@ -3021,6 +3417,12 @@ function openDungeon() {
   dungeon.floor = dungeon.floor || 1;
   dungeon.bossDefeated = false;
   dungeon.ironMaidenSeen = false;
+  dungeon.bossesDefeated = [];
+  dungeon.potions = dungeon.potions || 0;
+  // reset grid size to match floor (generateDungeon will overwrite these too)
+  const { w: preW, h: preH } = getDungeonSize(dungeon.floor);
+  dungeon.dungeonW = preW;
+  dungeon.dungeonH = preH;
 
   // generate map
   const { grid, objects } = generateDungeon(dungeon.floor);
@@ -3048,9 +3450,10 @@ function openDungeon() {
 
   showScreen('dungeon-screen');
   updateDungeonHUD();
-  const floorNames = ['','B1 \u2014 the first descent','B2 \u2014 crumbling halls','B3 \u2014 the hollow throne','B4 \u2014 s.fade\u2019s domain'];
+  const floorNames = ['','B1 \u2014 the first descent','B2 \u2014 crumbling halls','B3 \u2014 the hollow throne','B4 \u2014 s.fade\u2019s domain','B5 \u2014 the colorless hall','B6 \u2014 the iron end'];
   dLog(`${floorNames[dungeon.floor] || 'B'+dungeon.floor} — you descend.`, 'dl-sys');
   if (dungeon.floor === 1) dLog('find the key. reach the gate.', 'dl-sys');
+  else if (dungeon.floor === 5) dLog('find the key. defeat all three bosses. reach the gate.', 'dl-sys');
   else dLog('find the key. defeat the boss. reach the gate.', 'dl-sys');
   document.getElementById('d-floor-val').textContent = 'B' + dungeon.floor;
   startDungeonRenderLoop();
@@ -3091,7 +3494,9 @@ function dungeonMove(dir) {
   const nx = dungeon.playerX + dx;
   const ny = dungeon.playerY + dy;
 
-  if (nx < 0 || ny < 0 || nx >= DUNGEON_W || ny >= DUNGEON_H) return;
+  const DW = dungeon.dungeonW || DUNGEON_W;
+  const DH = dungeon.dungeonH || DUNGEON_H;
+  if (nx < 0 || ny < 0 || nx >= DW || ny >= DH) return;
   if (dungeon.grid[ny][nx] === DUNGEON_TILE.WALL) { SFX.wall(); return; }
 
   _dungeonMoveCooldown = true;
@@ -3128,11 +3533,40 @@ function checkInteractable() {
     const dx = Math.abs(obj.x - px), dy = Math.abs(obj.y - py);
     if (dx <= 1 && dy <= 1 && (dx + dy > 0)) {
       dungeon.interactable = obj;
-      const hints = { enemy:'fight enemy', chest:'open chest', loot:'pick up loot', key:'take key', gate: dungeon.hasKey ? (dungeon.floor < 2 || dungeon.bossDefeated ? 'enter gate' : 'boss must die first') : 'locked — needs key', boss:'face the boss', ironmaiden:'approach her' };
+      const allBossDead = dungeon.floor === 5 && (dungeon.bossesDefeated||[]).length >= 3;
+      const gateReady = dungeon.hasKey && (dungeon.floor < 2 || dungeon.bossDefeated || allBossDead || dungeon.floor === 6 && dungeon.bossDefeated);
+      const hints = {
+        enemy: 'fight enemy',
+        chest: 'open chest',
+        loot: 'pick up loot',
+        key: 'take key',
+        gate: gateReady ? 'enter gate' : (!dungeon.hasKey ? 'locked — needs key' : 'boss must die first'),
+        boss: 'face the boss',
+        boss5: `face ${obj.name}`,
+        ironmaiden: 'approach her',
+        ironmaiden_boss: 'face iron maiden',
+        trap: '(step on tile)',
+        mimic: 'open chest',
+        integration: `take integration`,
+      };
       setDungeonInteractHint(hints[obj.type] || 'interact');
       return;
     }
   }
+
+  // Check if player stepped ON a trap
+  for (const obj of dungeon.objects) {
+    if (obj.collected) continue;
+    if (obj.type === 'trap' && obj.x === px && obj.y === py) {
+      triggerTrap(obj);
+      return;
+    }
+    if (obj.type === 'mimic' && obj.x === px && obj.y === py) {
+      triggerMimic(obj);
+      return;
+    }
+  }
+
   setDungeonInteractHint(null);
 }
 
@@ -3154,8 +3588,16 @@ function dungeonInteract() {
     enterGate(obj);
   } else if (obj.type === 'boss') {
     triggerBossBattle(obj);
+  } else if (obj.type === 'boss5') {
+    triggerBoss5Battle(obj);
   } else if (obj.type === 'ironmaiden') {
     triggerIronMaidenDialogue(obj);
+  } else if (obj.type === 'ironmaiden_boss') {
+    triggerIronMaidenBoss(obj);
+  } else if (obj.type === 'mimic') {
+    triggerMimic(obj);
+  } else if (obj.type === 'integration') {
+    pickIntegration(obj);
   }
 }
 
@@ -3163,11 +3605,15 @@ function dungeonInteract() {
 function openChest(obj) {
   SFX.chest();
   obj.collected = true;
-  const fhGain = 15 + Math.floor(Math.random() * 25);
-  const hpGain = Math.floor(dungeon.player.maxHp * 0.10);
+  const isBuffed = dungeon.floor >= 5;
+  const fhGain = isBuffed ? (35 + Math.floor(Math.random() * 45)) : (15 + Math.floor(Math.random() * 25));
+  const hpGain = Math.floor(dungeon.player.maxHp * (isBuffed ? 0.20 : 0.10));
   dungeon.fH += fhGain;
   dungeon.player.hp = Math.min(dungeon.player.maxHp, dungeon.player.hp + hpGain);
-  dLog(`chest opened! +${fhGain} fH, +${hpGain} hp.`, 'dl-find');
+  // Chest always gives 1 potion (35% chance of 2)
+  const potionGain = Math.random() < 0.35 ? 2 : 1;
+  dungeon.potions = (dungeon.potions || 0) + potionGain;
+  dLog('chest opened! +' + fhGain + ' fH, +' + hpGain + ' hp, +' + potionGain + ' potion' + (potionGain > 1 ? 's' : '') + '.', 'dl-find');
   updateDungeonHUD();
   checkInteractable();
 }
@@ -3175,21 +3621,191 @@ function openChest(obj) {
 function pickLoot(obj) {
   SFX.loot();
   obj.collected = true;
+  const isBuffed = dungeon.floor >= 5;
   const roll = Math.random();
-  if (roll < 0.45) {
-    const fhGain = 5 + Math.floor(Math.random() * 12);
+  if (roll < 0.40) {
+    const fhGain = isBuffed ? (18 + Math.floor(Math.random() * 22)) : (5 + Math.floor(Math.random() * 12));
     dungeon.fH += fhGain;
-    dLog(`loot found: +${fhGain} fH.`, 'dl-find');
-  } else if (roll < 0.80) {
-    const hpGain = Math.floor(dungeon.player.maxHp * 0.08);
+    dLog('loot found: +' + fhGain + ' fH.', 'dl-find');
+  } else if (roll < 0.70) {
+    const hpGain = Math.floor(dungeon.player.maxHp * (isBuffed ? 0.14 : 0.08));
     dungeon.player.hp = Math.min(dungeon.player.maxHp, dungeon.player.hp + hpGain);
-    dLog(`loot found: +${hpGain} hp restored.`, 'dl-find');
+    dLog('loot found: +' + hpGain + ' hp restored.', 'dl-find');
+  } else if (roll < 0.85) {
+    const spGain = isBuffed ? 2 : 1;
+    dungeon.player.sp = Math.min(dungeon.player.spMax, dungeon.player.sp + spGain);
+    dLog('loot found: +' + spGain + ' sp.', 'dl-find');
   } else {
-    dungeon.player.sp = Math.min(dungeon.player.spMax, dungeon.player.sp + 1);
-    dLog(`loot found: +1 sp.`, 'dl-find');
+    // 15% chance: potion
+    dungeon.potions = (dungeon.potions || 0) + 1;
+    dLog('loot found: a potion. (' + dungeon.potions + ' total)', 'dl-find');
   }
   updateDungeonHUD();
   checkInteractable();
+}
+
+function pickIntegration(obj) {
+  SFX.chest();
+  obj.collected = true;
+  const b = obj.buff;
+  const p = dungeon.player;
+  if (b.effect === 'maxhp') {
+    p.maxHp += b.value;
+    p.hp = Math.min(p.maxHp, p.hp + b.value);
+    dLog(`integration: ${b.name}. ${b.desc}. max hp is now ${p.maxHp}.`, 'dl-find');
+  } else if (b.effect === 'atk') {
+    p.atk += b.value;
+    dLog(`integration: ${b.name}. ${b.desc}. atk is now ${p.atk}.`, 'dl-find');
+  } else if (b.effect === 'def') {
+    p.def = Math.min(0.80, (p.def || 0) + b.value);
+    dLog(`integration: ${b.name}. ${b.desc}.`, 'dl-find');
+  } else if (b.effect === 'sp') {
+    p.spMax += b.value;
+    p.sp = Math.min(p.spMax, p.sp + b.value);
+    dLog(`integration: ${b.name}. ${b.desc}. sp max is now ${p.spMax}.`, 'dl-find');
+  } else if (b.effect === 'heal') {
+    const heal = Math.floor(p.maxHp * b.value);
+    p.hp = Math.min(p.maxHp, p.hp + heal);
+    dLog(`integration: ${b.name}. ${b.desc}. +${heal} hp.`, 'dl-find');
+  }
+  updateDungeonHUD();
+  checkInteractable();
+}
+
+function triggerTrap(obj) {
+  if (obj.collected) return;
+  obj.collected = true;
+  SFX.hit();
+  const dmg = Math.floor(dungeon.player.maxHp * 0.12 + Math.random() * 20);
+  dungeon.player.hp -= dmg;
+  dungeon.degradation = Math.min(100, dungeon.degradation + 5);
+  dLog(`spike trap! you take ${dmg} damage.`, 'dl-warn');
+  updateDungeonHUD();
+  if (dungeon.player.hp <= 0) { dungeonDeath(); return; }
+  checkInteractable();
+}
+
+function triggerMimic(obj) {
+  if (obj.collected) return;
+  SFX.encounter();
+  dLog(`the chest snaps open — it's a mimic!`, 'dl-warn');
+  showDungeonOverlay(
+    `⚠ mimic!`,
+    `that "chest" has teeth.`,
+    [
+      { label: 'fight', fn: () => {
+        hideDungeonOverlay();
+        obj.collected = true;
+        const mimicStats = { hp: 280 + dungeon.floor * 40, atk: 40 + dungeon.floor * 6 };
+        state.enemy = { name: 'mimic chest', hp: mimicStats.hp, maxHp: mimicStats.hp, atk: mimicStats.atk };
+        state.player = dungeon.player;
+        state.inBattle = true;
+        state.playerTurn = true;
+        state.bulwark = 0;
+        state.dirgeturns = 0;
+        state.skillUsedThisBattle = false;
+        state._fromDungeon = true;
+        state.degradation = dungeon.degradation;
+        setupBattleUI();
+        showScreen('battle-screen');
+        logMsg(`[ mimic ] a chest snaps shut on you!`, 'sys');
+        setActionsEnabled(true);
+        dungeon.active = false;
+        if (_dungeonRenderFrame) cancelAnimationFrame(_dungeonRenderFrame);
+        document.removeEventListener('keydown', dungeonKeyHandler);
+      }},
+      { label: 'run', fn: () => {
+        hideDungeonOverlay();
+        const dmg = Math.floor(dungeon.player.maxHp * 0.08);
+        dungeon.player.hp -= dmg;
+        dungeon.degradation = Math.min(100, dungeon.degradation + 6);
+        dLog(`you flee the mimic. it swipes you for ${dmg} damage.`, 'dl-warn');
+        updateDungeonHUD();
+        if (dungeon.player.hp <= 0) { dungeonDeath(); }
+      }}
+    ]
+  );
+}
+
+// Floor 5 boss battle (mirror enemies)
+function triggerBoss5Battle(obj) {
+  if (obj.collected) return;
+  SFX.encounter();
+  const bossIdx = obj.bossIndex;
+  const defeated = dungeon.bossesDefeated || [];
+  if (defeated.includes(bossIdx)) {
+    dLog('this one has already fallen.', 'dl-sys');
+    return;
+  }
+  dLog(`the air shifts. ${obj.name} emerges.`, 'dl-warn');
+
+  showDungeonOverlay(
+    `⚠ mirror boss`,
+    `${obj.name}\n[ a pale reflection of yourself ]`,
+    [
+      { label: 'fight', fn: () => {
+        hideDungeonOverlay();
+        obj.collected = true;
+        dungeon._pendingBossObj = obj;
+        dungeon._pendingBossIdx = bossIdx;
+        state.degradation = dungeon.degradation;
+        state.enemy = {
+          name: obj.name, hp: obj.hp, maxHp: obj.maxHp, atk: obj.atk,
+          isMirrorBoss: true, bossClass: obj.bossClass,
+          deg: 0, maxDeg: 100
+        };
+        state.player = dungeon.player;
+        state.inBattle = true;
+        state.playerTurn = true;
+        state.bulwark = 0;
+        state.dirgeturns = 0;
+        state.skillUsedThisBattle = false;
+        state._fromDungeon = true;
+        state._fromDungeonBoss = true;
+        state._mirrorBoss = true;
+        setupBattleUI();
+        // Add enemy degradation display
+        showMirrorBossHUD(obj.name);
+        showScreen('battle-screen');
+        logMsg(`[ mirror boss ] ${obj.name} stands before you.`, 'sys');
+        logMsg(`this one can attack, slip, cleanse — and will die when their degradation fills.`, 'sys');
+        setActionsEnabled(true);
+        dungeon.active = false;
+        if (_dungeonRenderFrame) cancelAnimationFrame(_dungeonRenderFrame);
+        document.removeEventListener('keydown', dungeonKeyHandler);
+      }},
+      { label: 'retreat', fn: () => { hideDungeonOverlay(); dLog('you step back.', 'dl-sys'); } }
+    ]
+  );
+}
+
+function showMirrorBossHUD(name) {
+  // Add a degradation bar under the enemy HP bar
+  const area = document.querySelector('.battle-enemy-area');
+  let mirrorDeg = document.getElementById('mirror-deg-row');
+  if (!mirrorDeg) {
+    mirrorDeg = document.createElement('div');
+    mirrorDeg.id = 'mirror-deg-row';
+    mirrorDeg.style.cssText = 'display:flex;align-items:center;gap:8px;padding:3px 10px;border-top:1px solid #333;background:#000;flex-shrink:0;';
+    mirrorDeg.innerHTML = `<span style="font-size:clamp(7px,1.3vw,9px);color:#aa5555;letter-spacing:0.08em;">enemy deg</span>
+      <div style="flex:1;height:6px;border:1px solid #444;background:#000;"><div id="mirror-deg-fill" style="height:100%;background:#ff5555;width:0%;transition:width 0.3s;"></div></div>
+      <span id="mirror-deg-val" style="font-size:clamp(7px,1.3vw,9px);color:#aa5555;">0/100</span>`;
+    const degRow = document.querySelector('.deg-meter-row');
+    if (degRow) degRow.parentNode.insertBefore(mirrorDeg, degRow);
+  }
+  mirrorDeg.style.display = 'flex';
+}
+
+function hideMirrorBossHUD() {
+  const el = document.getElementById('mirror-deg-row');
+  if (el) el.style.display = 'none';
+}
+
+function updateMirrorBossHUD(deg) {
+  const fill = document.getElementById('mirror-deg-fill');
+  const val = document.getElementById('mirror-deg-val');
+  if (fill) fill.style.width = Math.min(100, deg) + '%';
+  if (val) val.textContent = `${Math.floor(deg)}/100`;
 }
 
 function takeKey(obj) {
@@ -3202,13 +3818,17 @@ function takeKey(obj) {
 }
 
 function enterGate(obj) {
+  const allBossDead = dungeon.floor === 5 && (dungeon.bossesDefeated||[]).length >= 3;
+  const gateReady = dungeon.hasKey && (dungeon.floor < 2 || dungeon.bossDefeated || allBossDead);
+
   if (!dungeon.hasKey) {
     dLog('the gate is locked. find the key first.', 'dl-warn');
     SFX.wall();
     return;
   }
-  if (dungeon.floor >= 2 && !dungeon.bossDefeated) {
-    dLog('the boss must be defeated before the gate opens.', 'dl-warn');
+  if (!gateReady && dungeon.floor >= 2) {
+    if (dungeon.floor === 5) dLog('all three bosses must fall before the gate opens.', 'dl-warn');
+    else dLog('the boss must be defeated before the gate opens.', 'dl-warn');
     SFX.wall();
     return;
   }
@@ -3221,34 +3841,35 @@ function enterGate(obj) {
   const floorFH = dungeon.fH;
   state.totalFH = (state.totalFH || 0) + floorFH;
 
-  if (dungeon.floor >= 4) {
-    // Final floor cleared — full win
+  if (dungeon.floor >= 6) {
     SFX.dungeonWin();
-    showDungeonOverlay(
-      'the dungeon is silent.',
-      `s.fade has fallen.\nfH collected: ${state.totalFH}\nenemies beaten: ${dungeon.enemiesBeaten}`,
-      [{ label: 'return to map', fn: () => { hideDungeonOverlay(); SFX.click(); dungeon.floor = 1; showMap(); } }]
-    );
+    showIronMaidenEnding();
   } else {
-    // Floor cleared — offer continue or exit
     SFX.dungeonWin();
     const nextFloor = dungeon.floor + 1;
-    const floorNames = { 2:'B2 \u2014 crumbling halls', 3:'B3 \u2014 the hollow throne', 4:'B4 \u2014 s.fade\u2019s domain' };
+    const floorNames = {
+      2:'B2 — crumbling halls',
+      3:'B3 — the hollow throne',
+      4:'B4 — s.fade\'s domain',
+      5:'B5 — the colorless hall',
+      6:'B6 — the iron end'
+    };
     showDungeonOverlay(
       `B${dungeon.floor} cleared.`,
       `fH this floor: ${floorFH}\nenemies beaten: ${dungeon.enemiesBeaten}\n\nyou feel your strength grow.`,
       [
         { label: `descend to ${floorNames[nextFloor] || 'B'+nextFloor}`, fn: () => {
           hideDungeonOverlay();
-          // buff player between floors
           const p = dungeon.player;
-          p.hp = p.maxHp; // full heal
+          p.hp = p.maxHp;
           p.maxHp = Math.floor(p.maxHp * 1.10);
           p.hp = p.maxHp;
           p.atk = Math.floor(p.atk * 1.08);
           p.def = Math.min(0.75, (p.def||0) + 0.03);
           dungeon.floor = nextFloor;
           dungeon.fH = 0;
+          dungeon.bossDefeated = false;
+          dungeon.bossesDefeated = [];
           openDungeon();
         }},
         { label: 'return to map', fn: () => { hideDungeonOverlay(); SFX.click(); dungeon.floor = 1; showMap(); } }
@@ -3257,7 +3878,220 @@ function enterGate(obj) {
   }
 }
 
-// ── Boss battle ───────────────────────────────────────────────────
+// Iron Maiden final boss (floor 6)
+function triggerIronMaidenBoss(obj) {
+  if (obj.collected) return;
+  SFX.encounter();
+  dungeon.active = false;
+  if (_dungeonRenderFrame) cancelAnimationFrame(_dungeonRenderFrame);
+  document.removeEventListener('keydown', dungeonKeyHandler);
+
+  const overlay = document.getElementById('dungeon-overlay');
+  const ovTitle = document.getElementById('dov-title');
+  const ovSub = document.getElementById('dov-sub');
+  const ovBtns = document.getElementById('dov-btns');
+  overlay.classList.add('active');
+
+  // Phase 1 dialogue
+  const phase1 = [
+    { speaker: 'IRON MAIDEN', text: 'So, you\'re the one who\'s left.' },
+    { speaker: 'YOU', text: 'I did what I had to.' },
+    { speaker: 'IRON MAIDEN', text: 'You slaughtered every version of yourself just to reach the end. Was the "you" that survived even worth the cost?' },
+    { speaker: 'YOU', text: 'I guess we\'re about to find out.' },
+    { speaker: 'IRON MAIDEN', text: 'Let\'s see if that soul of yours can actually feel pain.' },
+  ];
+
+  let lineIdx = 0;
+
+  function showDialogueLine(lines, onDone) {
+    const line = lines[lineIdx];
+    ovTitle.style.cssText = 'font-size:clamp(9px,2vw,12px);color:#cc6666;letter-spacing:0.12em;text-align:left;width:100%;max-width:360px;';
+    ovSub.style.cssText = 'font-size:clamp(11px,2.4vw,15px);color:#fff;line-height:1.7;text-align:left;width:100%;max-width:360px;min-height:44px;';
+    ovBtns.innerHTML = '';
+    ovTitle.textContent = line.speaker + ':';
+    ovSub.textContent = line.text;
+
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.style.marginTop = '18px';
+    const isLast = lineIdx >= lines.length - 1;
+    btn.textContent = isLast ? '▸ begin' : '▸';
+    btn.onclick = () => {
+      if (isLast) { lineIdx = 0; onDone(); }
+      else { lineIdx++; showDialogueLine(lines, onDone); }
+    };
+    ovBtns.appendChild(btn);
+  }
+
+  showDialogueLine(phase1, () => {
+    overlay.classList.remove('active');
+    ovTitle.style.cssText = '';
+    ovSub.style.cssText = '';
+    // Start Iron Maiden battle
+    obj.collected = true;
+    const im = DUNGEON_BOSSES[6];
+    state.degradation = dungeon.degradation;
+    state.enemy = { name: 'iron maiden', hp: im.hp, maxHp: im.hp, atk: im.atk, phase: 1, isIronMaidenFinal: true };
+    state.player = dungeon.player;
+    state.inBattle = true;
+    state.playerTurn = true;
+    state.bulwark = 0;
+    state.dirgeturns = 0;
+    state.skillUsedThisBattle = false;
+    state._fromDungeon = true;
+    state._fromDungeonBoss = true;
+    state._ironMaidenFinal = true;
+    setupBattleUI();
+    showScreen('battle-screen');
+    logMsg(`[ iron maiden ] the dungeon holds its breath.`, 'sys');
+    setActionsEnabled(true);
+  });
+}
+
+const IRON_MAIDEN_PHASE2_LINES = [
+  { speaker: 'IRON MAIDEN', text: '[Coughing, clutching her armor] You\'re... desperate. I can feel it.' },
+  { speaker: 'YOU', text: 'I\'m not stopping now.' },
+  { speaker: 'IRON MAIDEN', text: 'You\'re fighting like there\'s nothing left to lose. And why would you? There\'s no one left in this world but you and me.' },
+  { speaker: 'YOU', text: 'Then let\'s finish it.' },
+];
+
+const IRON_MAIDEN_DEFEAT_LINES = [
+  { speaker: 'IRON MAIDEN', text: '[Falling to her knees] The silence... it\'s finally breaking.' },
+  { speaker: 'YOU', text: 'Is it over?' },
+  { speaker: 'IRON MAIDEN', text: 'Look at the horizon. The gray is bleeding out.' },
+  { speaker: 'ACTION', text: '*SCREEN FLASHES WHITE*' },
+  { speaker: 'YOU', text: '...It\'s bright.' },
+  { speaker: 'IRON MAIDEN', text: 'It\'s the sun. I almost forgot what it looked like. Go on... take your world back.' },
+  { speaker: 'ACTION', text: '[Iron Maiden shatters into light. A blinding flash erupts, washing away the gray ruins with deep blues and gold. The sky returns, the wind turns warm, and color floods back into your hands.]' },
+];
+
+function triggerIronMaidenPhase2Dialogue() {
+  dungeon.active = false;
+  if (_dungeonRenderFrame) cancelAnimationFrame(_dungeonRenderFrame);
+
+  const overlay = document.getElementById('dungeon-overlay');
+  const ovTitle = document.getElementById('dov-title');
+  const ovSub = document.getElementById('dov-sub');
+  const ovBtns = document.getElementById('dov-btns');
+  overlay.classList.add('active');
+  showScreen('dungeon-screen');
+
+  let lineIdx = 0;
+  function showLine() {
+    const line = IRON_MAIDEN_PHASE2_LINES[lineIdx];
+    ovTitle.style.cssText = 'font-size:clamp(9px,2vw,12px);color:#cc6666;letter-spacing:0.12em;text-align:left;width:100%;max-width:360px;';
+    ovSub.style.cssText = 'font-size:clamp(11px,2.4vw,15px);color:#fff;line-height:1.7;text-align:left;width:100%;max-width:360px;min-height:44px;';
+    ovBtns.innerHTML = '';
+    ovTitle.textContent = line.speaker + ':';
+    ovSub.textContent = line.text;
+
+    const isLast = lineIdx >= IRON_MAIDEN_PHASE2_LINES.length - 1;
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.style.marginTop = '18px';
+    btn.textContent = isLast ? '▸ fight on' : '▸';
+    btn.onclick = () => {
+      if (isLast) {
+        overlay.classList.remove('active');
+        ovTitle.style.cssText = '';
+        ovSub.style.cssText = '';
+        // Resume battle with phase 2 (buffed)
+        state.enemy.phase = 2;
+        state.enemy.atk = Math.floor(DUNGEON_BOSSES[6].atk * 1.3);
+        state.inBattle = true;
+        state.playerTurn = true;
+        state._fromDungeon = true;
+        state._fromDungeonBoss = true;
+        state._ironMaidenFinal = true;
+        showScreen('battle-screen');
+        logMsg(`[ phase 2 ] the iron maiden rises again. she is faster now.`, 'sys');
+        setActionsEnabled(true);
+      } else {
+        lineIdx++;
+        showLine();
+      }
+    };
+    ovBtns.appendChild(btn);
+  }
+  showLine();
+}
+
+function triggerIronMaidenDefeat() {
+  dungeon.active = false;
+  const overlay = document.getElementById('dungeon-overlay');
+  const ovTitle = document.getElementById('dov-title');
+  const ovSub = document.getElementById('dov-sub');
+  const ovBtns = document.getElementById('dov-btns');
+  overlay.classList.add('active');
+  showScreen('dungeon-screen');
+
+  let lineIdx = 0;
+  function showLine() {
+    const line = IRON_MAIDEN_DEFEAT_LINES[lineIdx];
+    ovBtns.innerHTML = '';
+    ovTitle.style.cssText = 'font-size:clamp(9px,2vw,12px);color:#cc6666;letter-spacing:0.12em;text-align:left;width:100%;max-width:380px;';
+    ovSub.style.cssText = 'font-size:clamp(11px,2.4vw,15px);color:#fff;line-height:1.7;text-align:left;width:100%;max-width:380px;min-height:44px;';
+    ovTitle.textContent = line.speaker + ':';
+
+    const isFlash = line.speaker === 'ACTION' && line.text.includes('FLASHES WHITE');
+    if (isFlash) {
+      ovSub.textContent = '';
+      ovTitle.style.cssText += 'color:#ffffff;font-size:clamp(14px,3vw,20px);text-align:center;width:100%;';
+      ovTitle.textContent = '✦ ✦ ✦';
+      // White flash effect
+      const flashEl = document.createElement('div');
+      flashEl.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:99999;opacity:0;transition:opacity 0.5s;pointer-events:none;';
+      document.body.appendChild(flashEl);
+      setTimeout(() => flashEl.style.opacity = '1', 50);
+      setTimeout(() => { flashEl.style.opacity = '0'; setTimeout(() => flashEl.remove(), 600); }, 800);
+    } else if (line.speaker === 'ACTION') {
+      ovTitle.style.cssText += 'color:#888;font-size:clamp(8px,1.5vw,10px);';
+      ovTitle.textContent = '';
+      ovSub.style.cssText += 'color:#888;font-style:italic;';
+      ovSub.textContent = line.text;
+    } else {
+      ovSub.textContent = line.text;
+    }
+
+    const isLast = lineIdx >= IRON_MAIDEN_DEFEAT_LINES.length - 1;
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.style.marginTop = '18px';
+    btn.textContent = isLast ? 'fin.' : '▸';
+    btn.onclick = () => {
+      if (isLast) {
+        overlay.classList.remove('active');
+        // Show true ending
+        showIronMaidenEnding();
+      } else {
+        lineIdx++;
+        showLine();
+      }
+    };
+    ovBtns.appendChild(btn);
+  }
+  showLine();
+}
+
+function showIronMaidenEnding() {
+  SFX.dungeonWin && SFX.dungeonWin();
+  // Full white flash then ending screen
+  const flashEl = document.createElement('div');
+  flashEl.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:99999;opacity:0;transition:opacity 1s;pointer-events:none;';
+  document.body.appendChild(flashEl);
+  setTimeout(() => flashEl.style.opacity = '1', 50);
+  setTimeout(() => {
+    flashEl.remove();
+    document.getElementById('end-text').innerHTML =
+      `<span style="color:#aaffcc">the iron maiden is gone.</span><br><br>` +
+      `you stand in what used to be gray.<br><br>` +
+      `the sky is blue now.<br><br>` +
+      `you forgot it could be.<br><br>` +
+      `<span style="color:#ffddaa">you take your world back.</span>`;
+    showScreen('end-screen');
+    dungeon.floor = 1;
+  }, 1400);
+}
 function triggerBossBattle(obj) {
   SFX.encounter();
   const boss = DUNGEON_BOSSES[dungeon.floor];
@@ -3298,15 +4132,15 @@ function triggerBossBattle(obj) {
 // ── Iron Maiden dialogue ─────────────────────────────────────────
 const IRON_MAIDEN_DIALOGUE = [
   { speaker: "YOU",    text: "You?!" },
-  { speaker: "HER",    text: "This place doesn't end things. It just... decays." },
+  { speaker: "IRON MAIDEN",    text: "This place doesn't end things. It just... decays." },
   { speaker: "YOU",    text: "What's waiting below?" },
-  { speaker: "HER",    text: "A voice." },
+  { speaker: "IRON MAIDEN",    text: "A voice." },
   { speaker: "YOU",    text: "Whose?" },
-  { speaker: "HER",    text: "No one's. Not anymore." },
+  { speaker: "IRON MAIDEN",    text: "No one's. Not anymore." },
   { speaker: "YOU",    text: "You can hear it?" },
-  { speaker: "HER",    text: "Every breath I take." },
+  { speaker: "IRON MAIDEN",    text: "Every breath I take." },
   { speaker: "YOU",    text: "Then why stay?" },
-  { speaker: "HER",    text: "Because it's beautiful." },
+  { speaker: "IRON MAIDEN",    text: "Because it's beautiful." },
   { speaker: "YOU",    text: "Wait!" },
   { speaker: "ACTION", text: "A jagged, menacing smile splits her face as she vanishes into the dark." },
 ];
@@ -3372,8 +4206,13 @@ function triggerIronMaidenDialogue(obj) {
 // ── random encounter ─────────────────────────────────────────────
 function triggerRandomEncounter() {
   SFX.encounter();
-  const allEnemies = Object.keys(ENEMY_STATS);
-  const pool = allEnemies.slice(0, Math.min(allEnemies.length, (state.currentLevel + 1) * 4));
+  let pool;
+  if (dungeon.floor >= 5) {
+    pool = FLOOR56_ENEMIES;
+  } else {
+    const allEnemies = Object.keys(ENEMY_STATS);
+    pool = allEnemies.slice(0, Math.min(allEnemies.length, (state.currentLevel + 1) * 4));
+  }
   const name = pool[Math.floor(Math.random() * pool.length)];
   dLog(`a ${name} lurches out of the shadows!`, 'dl-enc');
 
@@ -3403,8 +4242,13 @@ function triggerRandomEncounter() {
 
 function triggerDungeonBattle(obj) {
   SFX.encounter();
-  const lvEnemies = LEVELS[state.currentLevel]?.enemies || Object.keys(ENEMY_STATS).slice(0,4);
-  const name = lvEnemies[Math.floor(Math.random() * lvEnemies.length)];
+  let enemyPool;
+  if (dungeon.floor >= 5) {
+    enemyPool = FLOOR56_ENEMIES;
+  } else {
+    enemyPool = LEVELS[state.currentLevel]?.enemies || Object.keys(ENEMY_STATS).slice(0,4);
+  }
+  const name = enemyPool[Math.floor(Math.random() * enemyPool.length)];
   dLog(`you approach — a ${name} rises!`, 'dl-enc');
 
   showDungeonOverlay(
@@ -3418,12 +4262,10 @@ function triggerDungeonBattle(obj) {
 }
 
 function startDungeonEncounterBattle(enemyName) {
-  // save dungeon state into state for battle
   dungeon.pendingBattle = enemyName;
   state.degradation = dungeon.degradation;
 
-  // set up a mini battle using the battle screen
-  const stats = ENEMY_STATS[enemyName] || { hp: 80, atk: 14 };
+  const stats = FLOOR56_ENEMY_STATS[enemyName] || ENEMY_STATS[enemyName] || { hp: 80, atk: 14 };
   state.enemy = { name: enemyName, hp: stats.hp, maxHp: stats.hp, atk: stats.atk };
   state.player = dungeon.player;
   state.inBattle = true;
@@ -3446,17 +4288,47 @@ function returnToDungeonAfterBattle(won) {
   dungeon.degradation = state.degradation;
   dungeon.player = state.player;
   const wasBoss = state._fromDungeonBoss;
+  const wasMirror = state._mirrorBoss;
+  const wasIronMaiden = state._ironMaidenFinal;
   state._fromDungeon = false;
   state._fromDungeonBoss = false;
+  state._mirrorBoss = false;
+  state._ironMaidenFinal = false;
+  hideMirrorBossHUD();
 
   if (won) {
     dungeon.enemiesBeaten++;
-    if (wasBoss) {
+    if (wasIronMaiden) {
+      // Check if Iron Maiden was phase 1 or 2
+      const imEnemy = state.enemy;
+      if (imEnemy && imEnemy.phase === 1 && !imEnemy._phase2done) {
+        // Trigger phase 2 dialogue, then resume
+        imEnemy._phase2done = true;
+        state._ironMaidenFinal = true;
+        triggerIronMaidenPhase2Dialogue();
+        return;
+      }
+      // Fully defeated
+      setTimeout(() => triggerIronMaidenDefeat(), 400);
+      return;
+    } else if (wasMirror) {
+      const bossIdx = dungeon._pendingBossIdx;
+      if (!dungeon.bossesDefeated) dungeon.bossesDefeated = [];
+      dungeon.bossesDefeated.push(bossIdx);
+      const fhGain = 55 + Math.floor(Math.random() * 25);
+      dungeon.fH += fhGain;
+      dLog(`${state.enemy.name} falls. +${fhGain} fH. (${dungeon.bossesDefeated.length}/3 bosses)`, 'dl-key');
+      if (dungeon.bossesDefeated.length >= 3) {
+        dLog('all three have fallen. the gate is open.', 'dl-key');
+        dungeon.bossDefeated = true;
+      }
+    } else if (wasBoss) {
       dungeon.bossDefeated = true;
       const boss = DUNGEON_BOSSES[dungeon.floor];
+      const bossName = Array.isArray(boss) ? 'the boss' : (boss ? boss.name : 'boss');
       const fhGain = 40 + Math.floor(Math.random() * 20);
       dungeon.fH += fhGain;
-      dLog(`${boss ? boss.name : 'boss'} defeated. the gate opens. +${fhGain} fH.`, 'dl-key');
+      dLog(`${bossName} defeated. the gate opens. +${fhGain} fH.`, 'dl-key');
     } else {
       const hpHeal = Math.floor(dungeon.player.maxHp * 0.08);
       const fhGain = 8 + Math.floor(Math.random() * 12);
