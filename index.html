@@ -1252,7 +1252,7 @@ body::after {
 
   
   <div id="map-screen" class="screen">
-    <div class="map-title">the broken path</div>
+    <div class="map-title">pick a gamemode</div>
     <div class="map-sub">choose your next step</div>
     <div class="level-list" id="level-list"></div>
   </div>
@@ -1719,7 +1719,7 @@ function renderMap() {
   if (state.chosenClass) {
     const dungeonItem = document.createElement('div');
     dungeonItem.className = 'level-item dungeon-entry';
-    dungeonItem.innerHTML = '<span>⬡ the lost dungeon</span><span class="dungeon-entry-tag">survival</span>';
+    dungeonItem.innerHTML = '<span>⬡ the broken path</span><span class="dungeon-entry-tag">survival</span>';
     dungeonItem.onclick = () => { SFX.click(); openDungeon(); };
     list.appendChild(dungeonItem);
   }
