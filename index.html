@@ -1585,7 +1585,7 @@ const LEVELS = [
   {
     name: 'the iron end',
     enemies: ['laughing split', 'wrong walker', 'joy mask', 'end fragment', 'bahamut'],
-    boss: { name: 'iron maiden', hp: 520, atk: 37, reward: 'end' }
+    boss: { name: 'sepulcher', hp: 520, atk: 37, reward: 'end' }
   }
 ];
 
@@ -2088,7 +2088,7 @@ const ENEMY_ART = {
 | ribs |
 \\|/|\\|/
   |||    `,
-  'iron maiden':
+  'sepulcher':
 `[|||||]
 [| . |]
 [|_._|]
@@ -2426,8 +2426,8 @@ function enemyTurn() {
 
   let dmg = Math.floor(e.atk * atkMult * (0.8 + Math.random() * 0.4));
 
-  // Iron Maiden phase 2 check: if enemy HP drops below 50% and phase hasn't changed
-  if (e.isIronMaidenFinal && e.phase === 1 && e.hp <= e.maxHp * 0.5 && !e._phase2triggered) {
+  // Sepulcher phase 2 check: if enemy HP drops below 50% and phase hasn't changed
+  if (e.isSepulcherFinal && e.phase === 1 && e.hp <= e.maxHp * 0.5 && !e._phase2triggered) {
     e._phase2triggered = true;
   }
 
@@ -2487,12 +2487,12 @@ function enemyDefeated() {
   state.inBattle = false;
   SFX.victory();
   if (state._fromDungeon) {
-    // Check if Iron Maiden first phase down
+    // Check if Sepulcher first phase down
     const e = state.enemy;
-    if (e && e.isIronMaidenFinal && e.phase === 1 && !e._phase2done) {
+    if (e && e.isSepulcherFinal && e.phase === 1 && !e._phase2done) {
       e._phase2done = true;
-      state._ironMaidenFinal = true;
-      setTimeout(() => triggerIronMaidenPhase2Dialogue(), 400);
+      state._sepulcherFinal = true;
+      setTimeout(() => triggerSepulcherPhase2Dialogue(), 400);
       return;
     }
     setTimeout(() => returnToDungeonAfterBattle(true), 400);
@@ -2582,7 +2582,7 @@ function restartGame() {
   dungeon = { grid:[], playerX:1, playerY:1, player:null, fH:0, hasKey:false,
     enemiesBeaten:0, degradation:0, interactable:null, pendingBattle:null,
     active:false, stepCount:0, revealedCells:new Set(), objects:[],
-    floor:1, bossDefeated:false, ironMaidenSeen:false, bossesDefeated:[],
+    floor:1, bossDefeated:false, sepulcherSeen:false, bossesDefeated:[],
     dungeonW:35, dungeonH:35, potions:0 };
   state = {
     chosenClass: null,
@@ -2607,7 +2607,7 @@ function restartGame() {
 function showEndScreen() {
   state.inBattle = false;
   document.getElementById('end-text').innerHTML =
-    `you defeat the iron maiden.<br><br>` +
+    `you defeat the sepulcher.<br><br>` +
     `you ask who she is.<br><br>` +
     `she just smiles at you again, like she already knows.<br><br>` +
     `then you start fading away slowly,<br>like you're being erased.<br><br>` +
@@ -2663,7 +2663,7 @@ let dungeon = {
   objects: [],
   floor: 1,
   bossDefeated: false,
-  ironMaidenSeen: false,
+  sepulcherSeen: false,
   bossesDefeated: [],  // for floor 5's 3 bosses
   dungeonW: 35,
   dungeonH: 35,
@@ -2698,7 +2698,7 @@ const DUNGEON_BOSSES = {
     { name: 'the pale minstrel',              hp: 640, atk: 56, class: 'bard', deg: 0 },
   ],
   // Floor 6: one boss room
-  6: { name: 'iron maiden', hp: 900, atk: 60, phase: 1 },
+  6: { name: 'sepulcher', hp: 900, atk: 60, phase: 1 },
 };
 
 // Floor 5 & 6 new enemies
@@ -2903,7 +2903,7 @@ function generateDungeon(floor = 1) {
           grid[ry][rx] = DUNGEON_TILE.FLOOR;
     objects.push({ type: 'gate', x: gx, y: gy, collected: false, requiresAllBosses: true });
   } else if (floor === 6) {
-    // Floor 6: 1 boss room, Iron Maiden
+    // Floor 6: 1 boss room, Sepulcher
     const bx = DW - 10, by = Math.floor(DH / 2) - 3;
     for (let ry = by; ry < by + 7; ry++)
       for (let rx = bx; rx < bx + 7; rx++)
@@ -2921,13 +2921,13 @@ function generateDungeon(floor = 1) {
     }
     const im = DUNGEON_BOSSES[6];
     objects.push({
-      type: 'ironmaiden_boss', x: bx + 3, y: by + 3, collected: false,
+      type: 'sepulcher_boss', x: bx + 3, y: by + 3, collected: false,
       name: im.name, hp: im.hp, maxHp: im.hp, atk: im.atk, phase: 1
     });
     objects.push({ type: 'gate', x: bx + 6, y: by + 5, collected: false });
     for (let i = objects.length - 3; i >= 0; i--) {
       const o = objects[i];
-      if (o.x >= bx && o.x < bx+7 && o.y >= by && o.y < by+7 && o.type !== 'ironmaiden_boss') objects.splice(i, 1);
+      if (o.x >= bx && o.x < bx+7 && o.y >= by && o.y < by+7 && o.type !== 'sepulcher_boss') objects.splice(i, 1);
     }
   } else if (floor === 1) {
     let gatePos = floors[0] || [DW-2, DH-2];
@@ -2937,13 +2937,13 @@ function generateDungeon(floor = 1) {
     objects.push({ type: 'gate', x: gatePos[0], y: gatePos[1], collected: false });
   }
 
-  // Iron Maiden teaser on floor 4
+  // Sepulcher teaser on floor 4
   if (floor === 4) {
     const midFloors = floors.filter(([x,y]) => Math.abs(x-17)<8 && Math.abs(y-17)<8);
     if (midFloors.length) {
       const idx = Math.floor(Math.random() * midFloors.length);
       const [ix, iy] = midFloors.splice(idx, 1)[0];
-      objects.push({ type: 'ironmaiden', x: ix, y: iy, collected: false });
+      objects.push({ type: 'sepulcher', x: ix, y: iy, collected: false });
     }
   }
 
@@ -3136,8 +3136,8 @@ function renderDungeon() {
       ctx.textBaseline = 'middle';
       ctx.fillText('★', sx + CELL/2, sy + CELL/2 + 1);
       ctx.globalAlpha = alpha;
-    } else if (obj.type === 'ironmaiden_boss') {
-      // Iron Maiden: slow red pulse circle
+    } else if (obj.type === 'sepulcher_boss') {
+      // Sepulcher: slow red pulse circle
       const impulse = 0.5 + 0.5 * Math.abs(Math.sin(Date.now()/400));
       ctx.globalAlpha = alpha * impulse;
       ctx.strokeStyle = '#ff4444';
@@ -3151,8 +3151,8 @@ function renderDungeon() {
       ctx.textBaseline = 'middle';
       ctx.fillText('!', sx + CELL/2, sy + CELL/2 + 1);
       ctx.globalAlpha = alpha;
-    } else if (obj.type === 'ironmaiden') {
-      // Iron Maiden teaser: white outline circle, ? inside
+    } else if (obj.type === 'sepulcher') {
+      // Sepulcher teaser: white outline circle, ? inside
       const impulse = 0.7 + 0.3 * Math.sin(Date.now()/700);
       ctx.globalAlpha = alpha * impulse;
       ctx.strokeStyle = '#ffffff';
@@ -3277,8 +3277,8 @@ function drawMinimap(ctx, pw, ph) {
   for (const obj of dungeon.objects) {
     if (obj.collected) continue;
     if (!dungeon.revealedCells.has(obj.y * DW + obj.x)) continue;
-    const sizes = { enemy: 2, chest: 3, loot: 2, key: 3, gate: 3, boss: 4, boss5: 4, ironmaiden: 3, ironmaiden_boss: 4, trap: 2, mimic: 3, integration: 3 };
-    const colors = { boss5: '#ff6060', ironmaiden_boss: '#ff4444', integration: '#ff9090', trap: '#cc2222', key: '#ffffff', gate: '#ffffff' };
+    const sizes = { enemy: 2, chest: 3, loot: 2, key: 3, gate: 3, boss: 4, boss5: 4, sepulcher: 3, sepulcher_boss: 4, trap: 2, mimic: 3, integration: 3 };
+    const colors = { boss5: '#ff6060', sepulcher_boss: '#ff4444', integration: '#ff9090', trap: '#cc2222', key: '#ffffff', gate: '#ffffff' };
     const sz = sizes[obj.type] || 2;
     ctx.fillStyle = colors[obj.type] || '#ffffff';
     ctx.fillRect(
@@ -3416,7 +3416,7 @@ function openDungeon() {
   dungeon.stepCount = 0;
   dungeon.floor = dungeon.floor || 1;
   dungeon.bossDefeated = false;
-  dungeon.ironMaidenSeen = false;
+  dungeon.sepulcherSeen = false;
   dungeon.bossesDefeated = [];
   dungeon.potions = dungeon.potions || 0;
   // reset grid size to match floor (generateDungeon will overwrite these too)
@@ -3543,8 +3543,8 @@ function checkInteractable() {
         gate: gateReady ? 'enter gate' : (!dungeon.hasKey ? 'locked — needs key' : 'boss must die first'),
         boss: 'face the boss',
         boss5: `face ${obj.name}`,
-        ironmaiden: 'approach her',
-        ironmaiden_boss: 'face iron maiden',
+        sepulcher: 'approach her',
+        sepulcher_boss: 'face sepulcher',
         trap: '(step on tile)',
         mimic: 'open chest',
         integration: `take integration`,
@@ -3590,10 +3590,10 @@ function dungeonInteract() {
     triggerBossBattle(obj);
   } else if (obj.type === 'boss5') {
     triggerBoss5Battle(obj);
-  } else if (obj.type === 'ironmaiden') {
-    triggerIronMaidenDialogue(obj);
-  } else if (obj.type === 'ironmaiden_boss') {
-    triggerIronMaidenBoss(obj);
+  } else if (obj.type === 'sepulcher') {
+    triggerSepulcherDialogue(obj);
+  } else if (obj.type === 'sepulcher_boss') {
+    triggerSepulcherBoss(obj);
   } else if (obj.type === 'mimic') {
     triggerMimic(obj);
   } else if (obj.type === 'integration') {
@@ -3843,7 +3843,7 @@ function enterGate(obj) {
 
   if (dungeon.floor >= 6) {
     SFX.dungeonWin();
-    showIronMaidenEnding();
+    showSepulcherEnding();
   } else {
     SFX.dungeonWin();
     const nextFloor = dungeon.floor + 1;
@@ -3878,8 +3878,8 @@ function enterGate(obj) {
   }
 }
 
-// Iron Maiden final boss (floor 6)
-function triggerIronMaidenBoss(obj) {
+// Sepulcher final boss (floor 6)
+function triggerSepulcherBoss(obj) {
   if (obj.collected) return;
   SFX.encounter();
   dungeon.active = false;
@@ -3894,11 +3894,11 @@ function triggerIronMaidenBoss(obj) {
 
   // Phase 1 dialogue
   const phase1 = [
-    { speaker: 'IRON MAIDEN', text: 'So, you\'re the one who\'s left.' },
+    { speaker: 'SEPULCHER', text: 'So, you\'re the one who\'s left.' },
     { speaker: 'YOU', text: 'I did what I had to.' },
-    { speaker: 'IRON MAIDEN', text: 'You slaughtered every version of yourself just to reach the end. Was the "you" that survived even worth the cost?' },
+    { speaker: 'SEPULCHER', text: 'You slaughtered every version of yourself just to reach the end. Was the "you" that survived even worth the cost?' },
     { speaker: 'YOU', text: 'I guess we\'re about to find out.' },
-    { speaker: 'IRON MAIDEN', text: 'Let\'s see if that soul of yours can actually feel pain.' },
+    { speaker: 'SEPULCHER', text: 'Let\'s see if that soul of yours can actually feel pain.' },
   ];
 
   let lineIdx = 0;
@@ -3927,11 +3927,11 @@ function triggerIronMaidenBoss(obj) {
     overlay.classList.remove('active');
     ovTitle.style.cssText = '';
     ovSub.style.cssText = '';
-    // Start Iron Maiden battle
+    // Start Sepulcher battle
     obj.collected = true;
     const im = DUNGEON_BOSSES[6];
     state.degradation = dungeon.degradation;
-    state.enemy = { name: 'iron maiden', hp: im.hp, maxHp: im.hp, atk: im.atk, phase: 1, isIronMaidenFinal: true };
+    state.enemy = { name: 'sepulcher', hp: im.hp, maxHp: im.hp, atk: im.atk, phase: 1, isSepulcherFinal: true };
     state.player = dungeon.player;
     state.inBattle = true;
     state.playerTurn = true;
@@ -3940,32 +3940,32 @@ function triggerIronMaidenBoss(obj) {
     state.skillUsedThisBattle = false;
     state._fromDungeon = true;
     state._fromDungeonBoss = true;
-    state._ironMaidenFinal = true;
+    state._sepulcherFinal = true;
     setupBattleUI();
     showScreen('battle-screen');
-    logMsg(`[ iron maiden ] the dungeon holds its breath.`, 'sys');
+    logMsg(`[ sepulcher ] the dungeon holds its breath.`, 'sys');
     setActionsEnabled(true);
   });
 }
 
-const IRON_MAIDEN_PHASE2_LINES = [
-  { speaker: 'IRON MAIDEN', text: '[Coughing, clutching her armor] You\'re... desperate. I can feel it.' },
+const SEPULCHER_PHASE2_LINES = [
+  { speaker: 'SEPULCHER', text: '[Coughing, clutching her armor] You\'re... desperate. I can feel it.' },
   { speaker: 'YOU', text: 'I\'m not stopping now.' },
-  { speaker: 'IRON MAIDEN', text: 'You\'re fighting like there\'s nothing left to lose. And why would you? There\'s no one left in this world but you and me.' },
+  { speaker: 'SEPULCHER', text: 'You\'re fighting like there\'s nothing left to lose. And why would you? There\'s no one left in this world but you and me.' },
   { speaker: 'YOU', text: 'Then let\'s finish it.' },
 ];
 
-const IRON_MAIDEN_DEFEAT_LINES = [
-  { speaker: 'IRON MAIDEN', text: '[Falling to her knees] The silence... it\'s finally breaking.' },
+const SEPULCHER_DEFEAT_LINES = [
+  { speaker: 'SEPULCHER', text: '[Falling to her knees] The silence... it\'s finally breaking.' },
   { speaker: 'YOU', text: 'Is it over?' },
-  { speaker: 'IRON MAIDEN', text: 'Look at the horizon. The gray is bleeding out.' },
+  { speaker: 'SEPULCHER', text: 'Look at the horizon. The gray is bleeding out.' },
   { speaker: 'ACTION', text: '*SCREEN FLASHES WHITE*' },
   { speaker: 'YOU', text: '...It\'s bright.' },
-  { speaker: 'IRON MAIDEN', text: 'It\'s the sun. I almost forgot what it looked like. Go on... take your world back.' },
-  { speaker: 'ACTION', text: '[Iron Maiden shatters into light. A blinding flash erupts, washing away the gray ruins with deep blues and gold. The sky returns, the wind turns warm, and color floods back into your hands.]' },
+  { speaker: 'SEPULCHER', text: 'It\'s the sun. I almost forgot what it looked like. Go on... take your world back.' },
+  { speaker: 'ACTION', text: '[Sepulcher shatters into light. A blinding flash erupts, washing away the gray ruins with deep blues and gold. The sky returns, the wind turns warm, and color floods back into your hands.]' },
 ];
 
-function triggerIronMaidenPhase2Dialogue() {
+function triggerSepulcherPhase2Dialogue() {
   dungeon.active = false;
   if (_dungeonRenderFrame) cancelAnimationFrame(_dungeonRenderFrame);
 
@@ -3978,14 +3978,14 @@ function triggerIronMaidenPhase2Dialogue() {
 
   let lineIdx = 0;
   function showLine() {
-    const line = IRON_MAIDEN_PHASE2_LINES[lineIdx];
+    const line = SEPULCHER_PHASE2_LINES[lineIdx];
     ovTitle.style.cssText = 'font-size:clamp(9px,2vw,12px);color:#cc6666;letter-spacing:0.12em;text-align:left;width:100%;max-width:360px;';
     ovSub.style.cssText = 'font-size:clamp(11px,2.4vw,15px);color:#fff;line-height:1.7;text-align:left;width:100%;max-width:360px;min-height:44px;';
     ovBtns.innerHTML = '';
     ovTitle.textContent = line.speaker + ':';
     ovSub.textContent = line.text;
 
-    const isLast = lineIdx >= IRON_MAIDEN_PHASE2_LINES.length - 1;
+    const isLast = lineIdx >= SEPULCHER_PHASE2_LINES.length - 1;
     const btn = document.createElement('button');
     btn.className = 'btn';
     btn.style.marginTop = '18px';
@@ -4002,9 +4002,9 @@ function triggerIronMaidenPhase2Dialogue() {
         state.playerTurn = true;
         state._fromDungeon = true;
         state._fromDungeonBoss = true;
-        state._ironMaidenFinal = true;
+        state._sepulcherFinal = true;
         showScreen('battle-screen');
-        logMsg(`[ phase 2 ] the iron maiden rises again. she is faster now.`, 'sys');
+        logMsg(`[ phase 2 ] the sepulcher rises again. she is faster now.`, 'sys');
         setActionsEnabled(true);
       } else {
         lineIdx++;
@@ -4016,7 +4016,7 @@ function triggerIronMaidenPhase2Dialogue() {
   showLine();
 }
 
-function triggerIronMaidenDefeat() {
+function triggerSepulcherDefeat() {
   dungeon.active = false;
   const overlay = document.getElementById('dungeon-overlay');
   const ovTitle = document.getElementById('dov-title');
@@ -4027,7 +4027,7 @@ function triggerIronMaidenDefeat() {
 
   let lineIdx = 0;
   function showLine() {
-    const line = IRON_MAIDEN_DEFEAT_LINES[lineIdx];
+    const line = SEPULCHER_DEFEAT_LINES[lineIdx];
     ovBtns.innerHTML = '';
     ovTitle.style.cssText = 'font-size:clamp(9px,2vw,12px);color:#cc6666;letter-spacing:0.12em;text-align:left;width:100%;max-width:380px;';
     ovSub.style.cssText = 'font-size:clamp(11px,2.4vw,15px);color:#fff;line-height:1.7;text-align:left;width:100%;max-width:380px;min-height:44px;';
@@ -4053,7 +4053,7 @@ function triggerIronMaidenDefeat() {
       ovSub.textContent = line.text;
     }
 
-    const isLast = lineIdx >= IRON_MAIDEN_DEFEAT_LINES.length - 1;
+    const isLast = lineIdx >= SEPULCHER_DEFEAT_LINES.length - 1;
     const btn = document.createElement('button');
     btn.className = 'btn';
     btn.style.marginTop = '18px';
@@ -4062,7 +4062,7 @@ function triggerIronMaidenDefeat() {
       if (isLast) {
         overlay.classList.remove('active');
         // Show true ending
-        showIronMaidenEnding();
+        showSepulcherEnding();
       } else {
         lineIdx++;
         showLine();
@@ -4073,7 +4073,7 @@ function triggerIronMaidenDefeat() {
   showLine();
 }
 
-function showIronMaidenEnding() {
+function showSepulcherEnding() {
   SFX.dungeonWin && SFX.dungeonWin();
   // Full white flash then ending screen
   const flashEl = document.createElement('div');
@@ -4083,7 +4083,7 @@ function showIronMaidenEnding() {
   setTimeout(() => {
     flashEl.remove();
     document.getElementById('end-text').innerHTML =
-      `<span style="color:#aaffcc">the iron maiden is gone.</span><br><br>` +
+      `<span style="color:#aaffcc">the sepulcher is gone.</span><br><br>` +
       `you stand in what used to be gray.<br><br>` +
       `the sky is blue now.<br><br>` +
       `you forgot it could be.<br><br>` +
@@ -4129,24 +4129,24 @@ function triggerBossBattle(obj) {
   );
 }
 
-// ── Iron Maiden dialogue ─────────────────────────────────────────
-const IRON_MAIDEN_DIALOGUE = [
+// ── Sepulcher dialogue ─────────────────────────────────────────
+const SEPULCHER_DIALOGUE = [
   { speaker: "YOU",    text: "You?!" },
-  { speaker: "IRON MAIDEN",    text: "This place doesn't end things. It just... decays." },
+  { speaker: "SEPULCHER",    text: "This place doesn't end things. It just... decays." },
   { speaker: "YOU",    text: "What's waiting below?" },
-  { speaker: "IRON MAIDEN",    text: "A voice." },
+  { speaker: "SEPULCHER",    text: "A voice." },
   { speaker: "YOU",    text: "Whose?" },
-  { speaker: "IRON MAIDEN",    text: "No one's. Not anymore." },
+  { speaker: "SEPULCHER",    text: "No one's. Not anymore." },
   { speaker: "YOU",    text: "You can hear it?" },
-  { speaker: "IRON MAIDEN",    text: "Every breath I take." },
+  { speaker: "SEPULCHER",    text: "Every breath I take." },
   { speaker: "YOU",    text: "Then why stay?" },
-  { speaker: "IRON MAIDEN",    text: "Because it's beautiful." },
+  { speaker: "SEPULCHER",    text: "Because it's beautiful." },
   { speaker: "YOU",    text: "Wait!" },
   { speaker: "ACTION", text: "A jagged, menacing smile splits her face as she vanishes into the dark." },
 ];
 
-function triggerIronMaidenDialogue(obj) {
-  if (dungeon.ironMaidenSeen) {
+function triggerSepulcherDialogue(obj) {
+  if (dungeon.sepulcherSeen) {
     dLog('the air is still. she is gone.', 'dl-sys');
     return;
   }
@@ -4162,7 +4162,7 @@ function triggerIronMaidenDialogue(obj) {
   overlay.classList.add('active');
 
   function showLine() {
-    const line = IRON_MAIDEN_DIALOGUE[lineIdx];
+    const line = SEPULCHER_DIALOGUE[lineIdx];
     ovTitle.style.cssText = 'font-size:clamp(9px,2vw,12px);color:#888;letter-spacing:0.12em;text-align:left;width:100%;max-width:340px;';
     ovSub.style.cssText = 'font-size:clamp(11px,2.4vw,15px);color:#fff;line-height:1.6;text-align:left;width:100%;max-width:340px;min-height:40px;';
     ovBtns.innerHTML = '';
@@ -4176,7 +4176,7 @@ function triggerIronMaidenDialogue(obj) {
       ovSub.textContent = line.text;
     }
 
-    const isLast = lineIdx >= IRON_MAIDEN_DIALOGUE.length - 1;
+    const isLast = lineIdx >= SEPULCHER_DIALOGUE.length - 1;
     const btn = document.createElement('button');
     btn.className = 'btn';
     btn.style.marginTop = '18px';
@@ -4184,7 +4184,7 @@ function triggerIronMaidenDialogue(obj) {
     btn.onclick = () => {
       if (isLast) {
         obj.collected = true;
-        dungeon.ironMaidenSeen = true;
+        dungeon.sepulcherSeen = true;
         overlay.classList.remove('active');
         // restore overlay styles
         ovTitle.style.cssText = '';
@@ -4289,27 +4289,27 @@ function returnToDungeonAfterBattle(won) {
   dungeon.player = state.player;
   const wasBoss = state._fromDungeonBoss;
   const wasMirror = state._mirrorBoss;
-  const wasIronMaiden = state._ironMaidenFinal;
+  const wasSepulcher = state._sepulcherFinal;
   state._fromDungeon = false;
   state._fromDungeonBoss = false;
   state._mirrorBoss = false;
-  state._ironMaidenFinal = false;
+  state._sepulcherFinal = false;
   hideMirrorBossHUD();
 
   if (won) {
     dungeon.enemiesBeaten++;
-    if (wasIronMaiden) {
-      // Check if Iron Maiden was phase 1 or 2
+    if (wasSepulcher) {
+      // Check if Sepulcher was phase 1 or 2
       const imEnemy = state.enemy;
       if (imEnemy && imEnemy.phase === 1 && !imEnemy._phase2done) {
         // Trigger phase 2 dialogue, then resume
         imEnemy._phase2done = true;
-        state._ironMaidenFinal = true;
-        triggerIronMaidenPhase2Dialogue();
+        state._sepulcherFinal = true;
+        triggerSepulcherPhase2Dialogue();
         return;
       }
       // Fully defeated
-      setTimeout(() => triggerIronMaidenDefeat(), 400);
+      setTimeout(() => triggerSepulcherDefeat(), 400);
       return;
     } else if (wasMirror) {
       const bossIdx = dungeon._pendingBossIdx;
